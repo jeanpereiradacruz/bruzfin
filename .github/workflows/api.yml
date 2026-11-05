@@ -33,6 +33,8 @@ jobs:
           filters: |
             api:
               - 'services/api/**'
+              # O realm do Keycloak é testado pela API (KeycloakRealmIT).
+              - 'infra/compose/keycloak/**'
               - '.github/workflows/api.yml'
 
   verify:

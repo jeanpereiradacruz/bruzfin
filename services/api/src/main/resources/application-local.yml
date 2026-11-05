@@ -1,0 +1,12 @@
+# Profile para desenvolvimento local com o Docker Compose (KAN-19).
+# Credenciais vêm de variáveis de ambiente; os valores padrão servem só para a máquina local.
+spring:
+  datasource:
+    url: ${BRUZFIN_DB_URL:jdbc:postgresql://localhost:5432/bruzfin}
+    username: ${BRUZFIN_DB_USER:bruzfin}
+    password: ${BRUZFIN_DB_PASSWORD:bruzfin-local}
+
+management:
+  endpoint:
+    health:
+      show-details: always

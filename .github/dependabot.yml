@@ -1,0 +1,89 @@
+# Atualizações automáticas de dependências (KAN-20).
+# cooldown: só propõe versões publicadas há pelo menos 7 dias (mesma ideia do minimumReleaseAge do pnpm).
+version: 2
+
+updates:
+  - package-ecosystem: npm # cobre o pnpm (lê o pnpm-lock.yaml)
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      dev-tools:
+        dependency-type: development
+        update-types: [minor, patch]
+      runtime:
+        dependency-type: production
+        update-types: [patch]
+    ignore:
+      # Versões do Expo e do React Native andam juntas com o SDK:
+      # atualizar com `npx expo install --fix` (ticket próprio), não pelo Dependabot.
+      - dependency-name: expo
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: "expo-*"
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: "@expo/*"
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: react-native
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: "react-native-*"
+        update-types: [version-update:semver-major, version-update:semver-minor]
+      - dependency-name: react
+        update-types: [version-update:semver-major, version-update:semver-minor]
+
+  - package-ecosystem: maven
+    directory: /services/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+        update-types: [minor, patch]
+      test:
+        patterns: ["org.testcontainers*", "com.tngtech.archunit*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore(ci)
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker-compose
+    directory: /infra/compose
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Sao_Paulo
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore(infra)
+    ignore:
+      # Majors (PostgreSQL 19, Valkey 9, Kafka 5...) mudam formato de dados: decisão manual.
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]

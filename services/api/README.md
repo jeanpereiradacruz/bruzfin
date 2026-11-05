@@ -20,7 +20,7 @@ Cada subpacote direto de `com.bruzfin.api` é um módulo (Spring Modulith). Dent
     config/                # @Configuration que liga casos de uso e adapters
 ```
 
-O módulo `about` (`GET /api/v1/about`) é o exemplo de referência.
+O módulo `about` (`GET /api/v1/about`) é o exemplo de referência. O módulo `platform` reúne preocupações técnicas sem regra de negócio, como o health check do Kafka (o Spring Boot não traz um pronto).
 
 ## Regras verificadas no build
 
@@ -32,10 +32,11 @@ O módulo `about` (`GET /api/v1/about`) é o exemplo de referência.
 
 ```bash
 ./mvnw verify                      # compila, testes unitários, arquitetura e integração
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local   # precisa do PostgreSQL (KAN-19)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local   # precisa do Docker Compose (infra/README.md)
 ```
 
-- Testes de integração (`*IT`) usam **Testcontainers** com PostgreSQL 18 e precisam de Docker; sem Docker eles são pulados.
+- Testes de integração (`*IT`) usam **Testcontainers** com PostgreSQL 18, Valkey 8 e Kafka 4, nas mesmas versões do compose (`TestcontainersConfiguration`), e precisam de Docker. Sem Docker eles são pulados.
+- O profile `local` lê `BRUZFIN_DB_*`, `BRUZFIN_VALKEY_*` e `BRUZFIN_KAFKA_BOOTSTRAP_SERVERS`. Os padrões batem com o `infra/compose/.env.example`.
 - O Maven Wrapper baixa o Maven 3.10.0 e confere o SHA-256 da distribuição.
 
 ## Endpoints
@@ -43,7 +44,7 @@ O módulo `about` (`GET /api/v1/about`) é o exemplo de referência.
 | Rota | Descrição |
 |---|---|
 | `GET /api/v1/about` | nome e versão da API |
-| `GET /actuator/health` | health check (com probes `liveness`/`readiness`) |
+| `GET /actuator/health` | health check (com probes `liveness`/`readiness`); no profile `local` mostra `db`, `redis` (Valkey) e `kafka` |
 | `GET /v3/api-docs` | contrato OpenAPI (usado pelo orval para gerar o cliente do app) |
 
 ## Banco

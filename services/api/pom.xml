@@ -84,6 +84,16 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Cache/rate limit (Valkey, compatível com o protocolo Redis) e mensageria -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-kafka</artifactId>
+        </dependency>
+
         <!-- Monólito modular e DDD -->
         <dependency>
             <groupId>org.springframework.modulith</groupId>
@@ -121,6 +131,11 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-kafka</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

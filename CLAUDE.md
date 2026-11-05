@@ -103,7 +103,7 @@ Acréscimos ao design: campo de visibilidade na conta e filtro "Lar · Só eu".
 
 - `pnpm install && pnpm turbo lint typecheck test`
 - `cd services/api && ./mvnw verify` (inclui ArchUnit e Testcontainers)
-- `docker compose -f infra/compose/docker-compose.yml up -d` → todos `healthy`
+- `docker compose -f infra/compose/docker-compose.yml up -d` → todos `healthy` (antes, uma vez: `cp infra/compose/.env.example infra/compose/.env`)
 
 ## Pendências do usuário
 

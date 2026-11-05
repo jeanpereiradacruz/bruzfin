@@ -1,0 +1,176 @@
+{
+  "name": "BruzFin",
+  "version": 1,
+  "color": {
+    "themes": [{ "id": "light", "name": "Claro" }, { "id": "dark", "name": "Escuro" }],
+    "tokens": [
+      {
+        "name": "surface-100",
+        "value": { "light": "#f7f8f6", "dark": "#0f1513" },
+        "usage": "Fundo da página. No claro, um off-white levemente esverdeado; no escuro, um quase preto esverdeado (nunca #000)."
+      },
+      {
+        "name": "surface-000",
+        "value": { "light": "#ffffff", "dark": "#171f1c" },
+        "usage": "Cartões, painéis, modais e campos de formulário sobre surface-100. No escuro, a elevação vem de a superfície ser mais clara, não de sombra."
+      },
+      {
+        "name": "border",
+        "value": { "light": "#dfe4e0", "dark": "#2a3531" },
+        "usage": "Divisores e contornos de cartões e tabelas. Só decorativo: em bordas de controle use ink-muted (3:1)."
+      },
+      {
+        "name": "ink",
+        "value": { "light": "#14201b", "dark": "#eef2ef" },
+        "usage": "Texto principal e valores monetários sobre surface-100 e surface-000 (16:1 no claro, 15:1 no escuro)."
+      },
+      {
+        "name": "ink-muted",
+        "value": { "light": "#55625c", "dark": "#9aa8a1" },
+        "usage": "Texto secundário, rótulos, datas e legendas sobre surface-100 e surface-000 (5,9:1 no claro, 6,8:1 no escuro). Também borda de inputs."
+      },
+      {
+        "name": "brand-600",
+        "value": { "light": "#0f7a5a", "dark": "#3fbf8f" },
+        "usage": "Verde BruzFin. Ação primária, links e foco. No escuro fica mais claro para continuar legível como link (7,3:1 sobre surface-000). Texto por cima sempre em on-brand."
+      },
+      {
+        "name": "on-brand",
+        "value": { "light": "#ffffff", "dark": "#0f1513" },
+        "usage": "Texto e ícones sobre brand-600: branco no claro (5,3:1), quase preto no escuro (7,9:1)."
+      },
+      {
+        "name": "brand-100",
+        "value": { "light": "#e3f2ec", "dark": "#173a2e" },
+        "usage": "Tinta da marca: fundo de item selecionado, destaques suaves e badges. Texto em brand-600 (5,4:1 no escuro) ou ink."
+      },
+      {
+        "name": "gold-500",
+        "value": { "light": "#c98a1b", "dark": "#e0a43a" },
+        "usage": "Dourado de acento: metas, conquistas e destaques premium. Só em superfícies e ícones grandes; texto por cima sempre em on-gold, nunca branco."
+      },
+      {
+        "name": "on-gold",
+        "value": { "light": "#14201b", "dark": "#0f1513" },
+        "usage": "Texto e ícones sobre gold-500, escuro nos dois temas (6,4:1 no claro, 8,3:1 no escuro)."
+      },
+      {
+        "name": "positive",
+        "value": { "light": "#157347", "dark": "#4cc38a" },
+        "usage": "Entradas, saldo positivo e variação para cima, sobre surface-000 (5,8:1 no claro, 7,6:1 no escuro). Sempre com o sinal + ou seta ▲: não diferencie de negative só pela cor."
+      },
+      {
+        "name": "negative",
+        "value": { "light": "#b42318", "dark": "#f2735f" },
+        "usage": "Saídas, saldo negativo, erros e alertas, sobre surface-000 (6,6:1 no claro, 6:1 no escuro). Sempre com o sinal − ou seta ▼ ao lado."
+      }
+    ]
+  },
+  "type": {
+    "fonts": [],
+    "families": {
+      "display": "\"Manrope\", system-ui, sans-serif",
+      "sans": "\"Inter\", system-ui, sans-serif"
+    },
+    "groups": [
+      {
+        "name": "Títulos",
+        "family": "display",
+        "styles": [
+          {
+            "name": "display",
+            "fontSize": "40px",
+            "lineHeight": "44px",
+            "fontWeight": 700,
+            "letterSpacing": "-0.02em",
+            "sample": "Seu mês em um olhar",
+            "usage": "Abertura de telas de marketing e onboarding. Um por tela."
+          },
+          {
+            "name": "heading-1",
+            "fontSize": "28px",
+            "lineHeight": "34px",
+            "fontWeight": 700,
+            "letterSpacing": "-0.01em",
+            "sample": "Visão geral",
+            "usage": "Título da página no app."
+          },
+          {
+            "name": "heading-2",
+            "fontSize": "20px",
+            "lineHeight": "28px",
+            "fontWeight": 600,
+            "sample": "Gastos por categoria",
+            "usage": "Título de cartão e de seção."
+          },
+          {
+            "name": "amount",
+            "fontSize": "32px",
+            "lineHeight": "36px",
+            "fontWeight": 700,
+            "letterSpacing": "-0.01em",
+            "sample": "R$ 12.480,90",
+            "usage": "Saldo e totais em destaque. Use font-variant-numeric: tabular-nums para alinhar colunas."
+          }
+        ]
+      },
+      {
+        "name": "Texto",
+        "family": "sans",
+        "styles": [
+          {
+            "name": "body",
+            "fontSize": "15px",
+            "lineHeight": "22px",
+            "fontWeight": 400,
+            "sample": "Você gastou 12% menos com mercado este mês.",
+            "usage": "Texto corrido, descrições e itens de lista."
+          },
+          {
+            "name": "body-strong",
+            "fontSize": "15px",
+            "lineHeight": "22px",
+            "fontWeight": 600,
+            "sample": "Supermercado Pão de Mel",
+            "usage": "Nome da transação, rótulo de botão, ênfase."
+          },
+          {
+            "name": "caption",
+            "fontSize": "13px",
+            "lineHeight": "18px",
+            "fontWeight": 400,
+            "sample": "Hoje, 14:32 · Cartão final 4821",
+            "usage": "Datas, metadados e legendas de gráfico, em ink-muted."
+          }
+        ]
+      }
+    ]
+  },
+  "spacing": {
+    "tokens": [
+      { "name": "space-1", "value": "4px", "usage": "Entre ícone e rótulo; entre valor e sinal." },
+      {
+        "name": "space-2",
+        "value": "8px",
+        "usage": "Entre itens relacionados; padding vertical de badges."
+      },
+      {
+        "name": "space-4",
+        "value": "16px",
+        "usage": "Padding de cartões no celular e gutter lateral; gap entre cartões."
+      },
+      {
+        "name": "space-6",
+        "value": "24px",
+        "usage": "Padding de cartões no desktop; espaço entre seções."
+      }
+    ]
+  },
+  "radius": {
+    "tokens": [
+      { "name": "radius-sm", "value": "6px", "usage": "Badges, chips e checkboxes." },
+      { "name": "radius-md", "value": "10px", "usage": "Botões e campos de formulário." },
+      { "name": "radius-lg", "value": "16px", "usage": "Cartões, painéis e modais." }
+    ]
+  }
+}

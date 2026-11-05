@@ -40,3 +40,11 @@ A pasta `android/` é gerada pelo `expo prebuild` e não é versionada; toda con
 
 - `FLAG_SECURE` ligado (`expo-screen-capture`): sem prints, gravação de tela ou prévia na lista de apps recentes.
 - `allowBackup: false`: os dados do app não vão para o backup do Google.
+- Para tirar prints durante o desenvolvimento (testes visuais), inicie o Metro com
+  `EXPO_PUBLIC_ALLOW_SCREEN_CAPTURE=1 pnpm start`. A exceção só vale em build de desenvolvimento.
+
+## Dica de build
+
+`pnpm android` compila só para a arquitetura do aparelho conectado. Rodando o Gradle direto,
+use `./gradlew installDebug -PreactNativeArchitectures=x86_64` (emulador) ou `arm64-v8a` (celular)
+para não compilar o código nativo para 4 arquiteturas.

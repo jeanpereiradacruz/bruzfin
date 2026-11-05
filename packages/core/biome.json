@@ -1,0 +1,39 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "root": false,
+  "extends": "//",
+  "linter": {
+    "rules": {
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "react": "O core é TypeScript puro: React fica em apps/mobile ou apps/web.",
+              "react-native": "O core é TypeScript puro: React Native fica em apps/mobile.",
+              "next": "O core é TypeScript puro: Next.js fica em apps/web."
+            },
+            "patterns": [
+              {
+                "group": [
+                  "react/*",
+                  "react-dom",
+                  "react-dom/*",
+                  "react-native/*",
+                  "expo",
+                  "expo-*",
+                  "@expo/*",
+                  "next/*",
+                  "@tanstack/*",
+                  "zustand",
+                  "zustand/*"
+                ],
+                "message": "O core não pode depender de framework de UI. Declare uma porta e implemente o adapter no app."
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

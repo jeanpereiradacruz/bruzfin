@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "BruzFin",
+    "slug": "bruzfin",
+    "scheme": "bruzfin",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.bruzfin.app",
+      "allowBackup": false,
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": [
+      "expo-router",
+      "react-native-edge-to-edge",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f7f8f6",
+          "dark": { "backgroundColor": "#0f1513" }
+        }
+      ]
+    ]
+  }
+}

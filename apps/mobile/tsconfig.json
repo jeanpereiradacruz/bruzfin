@@ -1,0 +1,9 @@
+{
+  "extends": ["expo/tsconfig.base", "@bruzfin/config/tsconfig.base.json"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2023"],
+    "types": ["jest", "react-native"]
+  },
+  "include": ["index.ts", "src", "jest.setup.ts"]
+}

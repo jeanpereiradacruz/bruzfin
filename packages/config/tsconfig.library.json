@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "BruzFin library (TS puro, sem DOM nem React)",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "${configDir}/dist",
+    "rootDir": "${configDir}/src"
+  },
+  "include": ["${configDir}/src"]
+}

@@ -58,7 +58,7 @@ services:
       retries: 10
 
   kafka:
-    image: apache/kafka:4.3.2
+    image: apache/kafka:4.4.0
     restart: unless-stopped
     environment:
       # KRaft com 1 nó fazendo papel de broker e controller.

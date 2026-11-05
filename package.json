@@ -1,0 +1,25 @@
+{
+  "name": "bruzfin",
+  "private": true,
+  "description": "BruzFin — controle financeiro (monorepo)",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "check": "turbo run lint typecheck test",
+    "format": "biome format --write .",
+    "lint:root": "biome check ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@bruzfin/config": "workspace:*",
+    "turbo": "2.11.10",
+    "typescript": "~6.0.3"
+  }
+}

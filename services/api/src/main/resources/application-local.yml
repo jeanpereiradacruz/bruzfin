@@ -1,10 +1,18 @@
-# Profile para desenvolvimento local com o Docker Compose (KAN-19).
-# Credenciais vêm de variáveis de ambiente; os valores padrão servem só para a máquina local.
+# Profile para desenvolvimento local com o Docker Compose (infra/compose, KAN-19).
+# Credenciais vêm de variáveis de ambiente; os valores padrão são os do .env.example
+# e só servem para a máquina local.
 spring:
   datasource:
     url: ${BRUZFIN_DB_URL:jdbc:postgresql://localhost:5432/bruzfin}
     username: ${BRUZFIN_DB_USER:bruzfin}
     password: ${BRUZFIN_DB_PASSWORD:bruzfin-local}
+  data:
+    redis:
+      host: ${BRUZFIN_VALKEY_HOST:localhost}
+      port: ${BRUZFIN_VALKEY_PORT:6379}
+      password: ${BRUZFIN_VALKEY_PASSWORD:valkey-local}
+  kafka:
+    bootstrap-servers: ${BRUZFIN_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 management:
   endpoint:

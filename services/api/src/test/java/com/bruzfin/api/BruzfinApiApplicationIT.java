@@ -4,29 +4,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Sobe a API inteira contra um PostgreSQL 18 real (Testcontainers).
+ * Sobe a API inteira contra PostgreSQL 18, Valkey 8 e Kafka 4 reais ({@link TestcontainersConfiguration}).
  * Sem Docker na máquina o teste é pulado; no CI ele sempre roda.
  */
 @Testcontainers(disabledWithoutDocker = true)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Em produção os componentes do health ficam ocultos; o teste os expõe para conferir cada conexão.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "management.endpoint.health.show-components=always")
 @AutoConfigureRestTestClient
-@DisplayName("API completa com PostgreSQL")
+@Import(TestcontainersConfiguration.class)
+@DisplayName("API completa com PostgreSQL, Valkey e Kafka")
 class BruzfinApiApplicationIT {
-
-    @Container
-    @ServiceConnection
-    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18-alpine");
 
     @Autowired
     private RestTestClient client;
@@ -47,6 +46,15 @@ class BruzfinApiApplicationIT {
     @DisplayName("health check responde UP")
     void healthIsUp() {
         client.get().uri("/actuator/health").exchange()
+                .expectStatus().isOk()
+                .expectBody().jsonPath("$.status").isEqualTo("UP");
+    }
+
+    @ParameterizedTest(name = "componente {0} do health check está UP")
+    @ValueSource(strings = {"db", "redis", "kafka"})
+    @DisplayName("conecta no PostgreSQL, no Valkey e no Kafka")
+    void infrastructureIsUp(String component) {
+        client.get().uri("/actuator/health/{component}", component).exchange()
                 .expectStatus().isOk()
                 .expectBody().jsonPath("$.status").isEqualTo("UP");
     }

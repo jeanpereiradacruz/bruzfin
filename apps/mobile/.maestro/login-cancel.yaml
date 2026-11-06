@@ -1,0 +1,18 @@
+# E2E: fechar a página de login volta para a tela de entrada sem erro.
+appId: com.bruzfin.app
+name: Cancelar login
+tags: [auth]
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "welcome-sign-in"
+- extendedWaitUntil:
+    visible:
+      id: "username"
+    timeout: 20000
+- back
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 10000
+- assertNotVisible: "Não foi possível entrar. Verifique sua conexão e tente novamente."

@@ -4,6 +4,9 @@ spring:
   threads:
     virtual:
       enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
   jpa:
     open-in-view: false
     hibernate:
@@ -41,3 +44,14 @@ management:
 springdoc:
   api-docs:
     path: /v3/api-docs
+
+bruzfin:
+  security:
+    # Emissor dos tokens (realm bruzfin do Keycloak). Obrigatório: a API não sobe sem ele.
+    issuer-uri: ${BRUZFIN_AUTH_ISSUER_URI:}
+    audience: bruzfin-api
+    public-api-docs: false
+  rate-limit:
+    authenticated-capacity: 120
+    anonymous-capacity: 30
+    period: 1m

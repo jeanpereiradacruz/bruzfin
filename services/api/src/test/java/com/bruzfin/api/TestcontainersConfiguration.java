@@ -1,8 +1,10 @@
 package com.bruzfin.api;
 
+import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -33,5 +35,18 @@ public class TestcontainersConfiguration {
     @ServiceConnection
     KafkaContainer kafkaContainer() {
         return new KafkaContainer("apache/kafka:4.3.2");
+    }
+
+    /** Keycloak com o mesmo realm do compose (e o usuário de teste do ambiente local). */
+    @Bean
+    KeycloakContainer keycloakContainer() {
+        return new KeycloakContainer("quay.io/keycloak/keycloak:26.8.2")
+                .withRealmImportFiles("/keycloak/bruzfin-realm.json", "/keycloak/dev/bruzfin-users-0.json");
+    }
+
+    @Bean
+    DynamicPropertyRegistrar keycloakIssuer(KeycloakContainer keycloak) {
+        return registry -> registry.add("bruzfin.security.issuer-uri",
+                () -> keycloak.getAuthServerUrl() + "/realms/bruzfin");
     }
 }

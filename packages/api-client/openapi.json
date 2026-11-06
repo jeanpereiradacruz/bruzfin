@@ -1,0 +1,201 @@
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "BruzFin API",
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ],
+  "security" : [ {
+    "bearer" : [ ]
+  } ],
+  "tags" : [ {
+    "name" : "Sobre",
+    "description" : "Identificação da API"
+  }, {
+    "name" : "Identidade",
+    "description" : "Usuário autenticado"
+  } ],
+  "paths" : {
+    "/api/v1/me" : {
+      "get" : {
+        "tags" : [ "Identidade" ],
+        "summary" : "Perfil do usuário autenticado (criado no primeiro acesso)",
+        "operationId" : "getMe",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Token ausente, inválido ou expirado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/about" : {
+      "get" : {
+        "tags" : [ "Sobre" ],
+        "summary" : "Nome e versão da API",
+        "operationId" : "getAbout",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/About"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Token ausente, inválido ou expirado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "Me" : {
+        "type" : "object",
+        "description" : "Perfil do usuário autenticado",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          },
+          "household" : {
+            "$ref" : "#/components/schemas/MeHousehold",
+            "description" : "Lar do usuário; ausente enquanto ele não tiver um"
+          }
+        },
+        "required" : [ "email", "id" ]
+      },
+      "MeHousehold" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "name" ]
+      },
+      "About" : {
+        "type" : "object",
+        "description" : "Nome e versão da API",
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "version" ]
+      },
+      "Problem" : {
+        "type" : "object",
+        "description" : "Erro no formato Problem Details (RFC 9457)",
+        "properties" : {
+          "title" : {
+            "type" : "string"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "status", "title" ]
+      }
+    },
+    "securitySchemes" : {
+      "bearer" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT"
+      }
+    }
+  }
+}

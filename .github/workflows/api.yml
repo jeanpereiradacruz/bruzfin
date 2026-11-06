@@ -35,6 +35,8 @@ jobs:
               - 'services/api/**'
               # O realm do Keycloak é testado pela API (KeycloakRealmIT).
               - 'infra/compose/keycloak/**'
+              # O teste de contrato compara a API com o openapi.json do cliente.
+              - 'packages/api-client/openapi.json'
               - '.github/workflows/api.yml'
 
   verify:

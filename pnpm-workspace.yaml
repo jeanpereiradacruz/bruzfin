@@ -6,3 +6,4 @@ packages:
 # Só liberamos o que for realmente necessário; false = usar o binário pré-compilado.
 allowBuilds:
   "@parcel/watcher": false
+  esbuild: false

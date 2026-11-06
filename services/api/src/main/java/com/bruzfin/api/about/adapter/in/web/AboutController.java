@@ -21,7 +21,7 @@ class AboutController {
     }
 
     @GetMapping
-    @Operation(summary = "Nome e versão da API")
+    @Operation(operationId = "getAbout", summary = "Nome e versão da API")
     AboutResponse about() {
         return AboutResponse.from(getAboutInfo.getAboutInfo());
     }

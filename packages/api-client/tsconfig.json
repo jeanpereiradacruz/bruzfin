@@ -1,0 +1,9 @@
+{
+  "extends": "@bruzfin/config/tsconfig.base.json",
+  "compilerOptions": {
+    // Só os tipos de fetch/Headers/RequestInit: no app quem fornece o fetch é o React Native.
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": []
+  },
+  "include": ["src", "orval.config.ts"]
+}

@@ -61,6 +61,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint typecheck test
+      # O cliente gerado precisa bater com o contrato (packages/api-client/openapi.json).
+      - name: Conferir cliente gerado pelo orval
+        run: |
+          pnpm --filter @bruzfin/api-client generate
+          git diff --exit-code -- packages/api-client/src/generated \
+            || { echo "::error::Cliente desatualizado: rode 'pnpm --filter @bruzfin/api-client generate' e commite."; exit 1; }
 
   # Check único e sempre presente, usado como obrigatório na proteção da main.
   # Passa quando o job rodou com sucesso ou foi pulado por não haver mudanças.

@@ -2,29 +2,29 @@
 # Pré-requisitos: docker compose de pé, API rodando (perfil local), dev build instalado e
 #   adb reverse tcp:8080 tcp:8080 && adb reverse tcp:8180 tcp:8180 && adb reverse tcp:8081 tcp:8081
 # Rodar: maestro test apps/mobile/.maestro
+# O Chrome não expõe os `id` do HTML no Custom Tab: os campos são achados pelos rótulos do Keycloak.
 appId: com.bruzfin.app
 name: Login com email e senha
 tags: [auth]
 ---
 - launchApp:
     clearState: true
-- assertVisible: "Entrar na sua conta"
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 60000
 - tapOn:
     id: "welcome-sign-in"
-# Página do Keycloak no Custom Tab (tema padrão até o KAN-23; ids do formulário do Keycloak).
-- extendedWaitUntil:
-    visible:
-      id: "username"
-    timeout: 20000
-- tapOn:
-    id: "username"
-- inputText: "usuario@bruzfin.local"
-- tapOn:
-    id: "password"
-- inputText: "Teste1234"
-- hideKeyboard
-- tapOn:
-    id: "kc-login"
+# Se o Chrome ainda tiver a sessão SSO do Keycloak, ele volta direto ao app (sem formulário).
+- runFlow:
+    when:
+      visible: "Endereço de email"
+    commands:
+      - tapOn: "Endereço de email"
+      - inputText: "usuario@bruzfin.local"
+      - tapOn: "Senha"
+      - inputText: "Teste1234"
+      - hideKeyboard
+      - tapOn: "Entrar"
 - extendedWaitUntil:
     visible: "Olá, Usuário"
     timeout: 20000

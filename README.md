@@ -20,11 +20,43 @@ infra/
   keycloak-theme/    # tema de login (Keycloakify)
 ```
 
+Plano de execução, decisões e fases: [docs/plano.md](docs/plano.md).
+
 ## Pré-requisitos
 
 - Node.js 24 LTS (`nvm use` lê o `.nvmrc`)
 - pnpm 12 via Corepack: `corepack enable`
 - Java 25 e Docker (a partir da API e do ambiente local)
+
+## Configurar uma máquina nova
+
+1. **Ferramentas**
+   - Node.js 24 com [nvm](https://github.com/nvm-sh/nvm) e pnpm via Corepack (`corepack enable`).
+   - JDK 25 para a API (ex.: `sdk install java 25-tem` com [SDKMAN](https://sdkman.io)).
+   - Docker com Compose v2 (usuário no grupo `docker`).
+   - Para o app Android: JDK 17, Android SDK e um emulador — veja [apps/mobile/README.md](apps/mobile/README.md).
+2. **Repositório e Git** — o email _noreply_ do GitHub mantém o email pessoal fora dos commits:
+
+   ```bash
+   git clone https://github.com/jeanpereiradacruz/bruzfin.git && cd bruzfin
+   git config user.name "<seu nome>"
+   git config user.email "<id>+<usuario>@users.noreply.github.com"
+   ```
+3. **GitHub CLI** — o escopo `workflow` é necessário para enviar mudanças em `.github/workflows`:
+
+   ```bash
+   gh auth login
+   gh auth refresh -h github.com -s workflow
+   ```
+4. **Ambiente local**
+
+   ```bash
+   cp infra/compose/.env.example infra/compose/.env
+   docker compose -f infra/compose/docker-compose.yml up -d
+   nvm use && corepack enable && pnpm install && pnpm check
+   (cd services/api && ./mvnw verify)
+   ```
+5. **Claude Code + Jira** — o servidor MCP da Atlassian já está em [`.mcp.json`](.mcp.json) (sem credenciais). Ao abrir o Claude Code na pasta do projeto, aprove o servidor `atlassian` e faça login com `/mcp`. Para retomar, peça para conferir o Jira e o `git log` e seguir pelo próximo ticket do épico em andamento. O plano completo está em [docs/plano.md](docs/plano.md).
 
 ## Como rodar
 

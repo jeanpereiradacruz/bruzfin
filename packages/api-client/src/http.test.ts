@@ -17,7 +17,7 @@ describe('cliente da API', () => {
       jsonResponse(200, { id: '0190f0b0-0000-7000-8000-000000000001', email: 'a@bruzfin.local' }),
     );
     configureApiClient({
-      baseUrl: 'http://localhost:8080/',
+      baseUrl: 'http://localhost:8080//',
       getAccessToken: async () => 'token-123',
       fetch: fetchMock,
     });

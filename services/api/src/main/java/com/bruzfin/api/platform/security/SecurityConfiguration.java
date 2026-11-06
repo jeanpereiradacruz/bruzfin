@@ -32,8 +32,9 @@ public class SecurityConfiguration {
             ObjectProvider<RateLimitFilter> rateLimitFilter) throws Exception {
         ProblemDetailsSecurityHandler problems = new ProblemDetailsSecurityHandler();
         http
-                // Só tokens Bearer, sem sessão nem cookie: CSRF não se aplica.
-                .csrf(csrf -> csrf.disable())
+                // CSRF depende de cookie de sessão; aqui a autenticação é só por Bearer, que o navegador
+                // não envia sozinho. A proteção continua ativa e só ignora quem traz o próprio token.
+                .csrf(csrf -> csrf.ignoringRequestMatchers(SecurityConfiguration::hasBearerToken))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(cache -> cache.disable())
                 .formLogin(form -> form.disable())
@@ -60,6 +61,11 @@ public class SecurityConfiguration {
                         .accessDeniedHandler(problems));
         rateLimitFilter.ifAvailable(filter -> http.addFilterAfter(filter, BearerTokenAuthenticationFilter.class));
         return http.build();
+    }
+
+    private static boolean hasBearerToken(jakarta.servlet.http.HttpServletRequest request) {
+        String authorization = request.getHeader(org.springframework.http.HttpHeaders.AUTHORIZATION);
+        return authorization != null && authorization.regionMatches(true, 0, "Bearer ", 0, 7);
     }
 
     /**

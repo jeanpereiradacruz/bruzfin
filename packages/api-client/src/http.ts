@@ -29,7 +29,15 @@ export interface ApiResponse<TData> {
 let current: ApiClientConfig | undefined;
 
 export function configureApiClient(config: ApiClientConfig): void {
-  current = { ...config, baseUrl: config.baseUrl.replace(/\/+$/, '') };
+  current = { ...config, baseUrl: withoutTrailingSlashes(config.baseUrl) };
+}
+
+function withoutTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url[end - 1] === '/') {
+    end--;
+  }
+  return url.slice(0, end);
 }
 
 /** Só para testes. */

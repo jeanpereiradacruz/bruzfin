@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -72,5 +74,19 @@ class MeControllerTest {
                 .andExpect(jsonPath("$.name").value("Pessoa A"))
                 .andExpect(jsonPath("$.household").doesNotExist())
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"));
+    }
+
+    @Test
+    @DisplayName("CSRF continua ativo para quem não usa Bearer e não atrapalha quem usa")
+    void csrfOnlyIgnoresBearerRequests() throws Exception {
+        given(jwtDecoder.decode("token-valido")).willReturn(Jwt.withTokenValue("token-valido")
+                .header("alg", "RS256").subject("sub-1")
+                .claim("email", "a@bruzfin.local").claim("email_verified", true).build());
+
+        mvc.perform(post("/api/v1/me"))
+                .andExpect(status().isForbidden());
+        // Com Bearer passa pelo CSRF e chega no controller, que não aceita POST.
+        mvc.perform(post("/api/v1/me").header("Authorization", "Bearer token-valido"))
+                .andExpect(status().isMethodNotAllowed());
     }
 }

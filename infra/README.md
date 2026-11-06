@@ -28,6 +28,24 @@ Depois, a API: `cd services/api && ./mvnw spring-boot:run -Dspring-boot.run.prof
 - **Kafka**: `auto.create.topics.enable=false`. Os tópicos serão criados explicitamente pela API.
 - Os dados ficam nos volumes `bruzfin_postgres-data`, `bruzfin_valkey-data` e `bruzfin_kafka-data`.
 
+## Keycloak (realm `bruzfin`)
+
+- O realm fica versionado em `compose/keycloak/bruzfin-realm.json` e é importado na primeira subida (`--import-realm`). O mesmo arquivo é testado pela API no `KeycloakRealmIT`.
+- Valores de cada ambiente usam placeholders `${VAR:padrão}` no JSON, preenchidos pelas variáveis `BRUZFIN_*` do `.env` (hoje, o SMTP).
+- **Só no local**: `compose/keycloak/dev/bruzfin-users-0.json` cria o usuário de teste `usuario@bruzfin.local` / `Teste1234`. A nuvem não monta esse arquivo.
+- Regras principais: cliente público `bruzfin-mobile` com Authorization Code + **PKCE S256** obrigatório (password grant e implicit desligados), audience `bruzfin-api`, access token de 5 min, refresh com rotação (reusar um refresh revoga a sessão), senha com 8+ caracteres, letras e números, bloqueio temporário após 5 falhas, idioma pt-BR e emails pelo Mailpit.
+- **Emulador Android**: rode `adb reverse tcp:8180 tcp:8180`. Assim o app também usa `http://localhost:8180`, e o issuer do token fica igual para o app e a API.
+- **Mudou o realm?** O import não sobrescreve um realm existente. No local, recrie só o banco do Keycloak (apaga usuários de teste e sessões, não toca no banco da API):
+
+```bash
+C="docker compose -f infra/compose/docker-compose.yml"
+$C stop keycloak
+$C exec -T postgres psql -U postgres -c "DROP DATABASE keycloak" -c "CREATE DATABASE keycloak OWNER keycloak" -c "REVOKE ALL ON DATABASE keycloak FROM PUBLIC"
+$C up -d keycloak
+```
+
+## Parar
+
 ```bash
 docker compose -f infra/compose/docker-compose.yml down      # para (mantém os dados)
 docker compose -f infra/compose/docker-compose.yml down -v   # para e APAGA os dados

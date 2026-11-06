@@ -99,7 +99,8 @@ services:
     image: quay.io/keycloak/keycloak:26.8.2
     restart: unless-stopped
     # Local usa start-dev (HTTP, sem cache de tema). Na nuvem será `start` com build otimizado.
-    command: start-dev
+    # --import-realm cria o realm `bruzfin` na primeira subida (não sobrescreve um realm existente).
+    command: start-dev --import-realm
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -112,11 +113,21 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
       JAVA_OPTS_KC_HEAP: -XX:MaxRAMPercentage=50 -Xms256m -Xmx768m
+      # Placeholders do realm-bruzfin.json. Local: Mailpit; o Brevo entra no KAN-22.
+      BRUZFIN_SMTP_HOST: ${BRUZFIN_SMTP_HOST:-mailpit}
+      BRUZFIN_SMTP_PORT: ${BRUZFIN_SMTP_PORT:-1025}
+      BRUZFIN_SMTP_FROM: ${BRUZFIN_SMTP_FROM:-nao-responda@bruzfin.local}
+    volumes:
+      - ./keycloak/bruzfin-realm.json:/opt/keycloak/data/import/bruzfin-realm.json:ro
+      # Só no ambiente local: usuário de teste (usuario@bruzfin.local / Teste1234).
+      - ./keycloak/dev/bruzfin-users-0.json:/opt/keycloak/data/import/bruzfin-users-0.json:ro
     ports:
       # 8080 fica para a API e 8081 para o Metro; o Keycloak usa 8180 na máquina.
       - "127.0.0.1:8180:8080"
     depends_on:
       postgres:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     healthcheck:
       # A imagem não tem curl: o health fica na porta de gerenciamento 9000.

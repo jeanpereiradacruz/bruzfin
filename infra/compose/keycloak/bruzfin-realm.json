@@ -1,0 +1,100 @@
+{
+  "realm": "bruzfin",
+  "displayName": "BruzFin",
+  "enabled": true,
+  "sslRequired": "external",
+
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "rememberMe": false,
+
+  "passwordPolicy": "length(8) and maxLength(128) and regexPattern(.*[A-Za-z].*) and digits(1) and notUsername and notEmail and passwordHistory(3)",
+
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+
+  "accessTokenLifespan": 300,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 7776000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanLogin": 1800,
+  "actionTokenGeneratedByUserLifespan": 1800,
+
+  "internationalizationEnabled": true,
+  "supportedLocales": ["pt-BR"],
+  "defaultLocale": "pt-BR",
+
+  "eventsEnabled": true,
+  "eventsExpiration": 604800,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": false,
+
+  "smtpServer": {
+    "host": "${BRUZFIN_SMTP_HOST:mailpit}",
+    "port": "${BRUZFIN_SMTP_PORT:1025}",
+    "from": "${BRUZFIN_SMTP_FROM:nao-responda@bruzfin.local}",
+    "fromDisplayName": "BruzFin",
+    "auth": "${BRUZFIN_SMTP_AUTH:false}",
+    "user": "${BRUZFIN_SMTP_USER:}",
+    "password": "${BRUZFIN_SMTP_PASSWORD:}",
+    "starttls": "${BRUZFIN_SMTP_STARTTLS:false}",
+    "ssl": "false"
+  },
+
+  "clients": [
+    {
+      "clientId": "bruzfin-mobile",
+      "name": "BruzFin (app Android)",
+      "description": "App Android: cliente público com Authorization Code + PKCE (S256).",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "frontchannelLogout": false,
+      "redirectUris": ["bruzfin://auth/callback"],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "bruzfin://auth/logout",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "require.pushed.authorization.requests": "false"
+      },
+      "defaultClientScopes": ["basic", "profile", "email", "web-origins", "acr"],
+      "optionalClientScopes": [],
+      "protocolMappers": [
+        {
+          "name": "audience bruzfin-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "bruzfin-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

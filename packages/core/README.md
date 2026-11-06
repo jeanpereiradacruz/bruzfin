@@ -30,3 +30,15 @@ Money.fromCents(-21437).format({ sign: 'always' }); // '− R$ 214,37'
 Money.fromDecimalString('8500.00'); // valor vindo da API
 gasto.reachedPercentOf(limite, 80); // alerta de 80% do limite
 ```
+
+## Autenticação
+
+`SignIn` orquestra o login sem conhecer Expo nem HTTP:
+
+1. `AuthGateway.authorize({ mode })` — Authorization Code + PKCE no provedor (`sign-in` ou `sign-up`);
+2. `CurrentUserGateway.fetchCurrentUser(accessToken)` — confirma o token na API (`/me`);
+3. `SessionStore.save(session)` — só com o perfil confirmado.
+
+Erros são valores com mensagens genéricas em pt-BR (`auth.cancelled`, `auth.failed`,
+`auth.profile-unavailable`). `InMemorySessionStore` guarda a sessão em memória (persistência no
+Keystore entra no KAN-29).

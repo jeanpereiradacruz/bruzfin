@@ -1,0 +1,21 @@
+# E2E: fechar a página do provedor volta para a tela de entrada sem erro.
+# Usa "Criar conta" porque o cadastro sempre mostra a página, mesmo com sessão SSO no Chrome.
+appId: com.bruzfin.app
+name: Cancelar login
+tags: [auth]
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 60000
+- tapOn:
+    id: "welcome-sign-up"
+- extendedWaitUntil:
+    visible: "localhost:8180"
+    timeout: 20000
+- tapOn: "Close tab"
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 10000
+- assertNotVisible: "Não foi possível entrar. Verifique sua conexão e tente novamente."

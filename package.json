@@ -17,7 +17,7 @@
     "lint:root": "biome check ."
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.6",
     "@bruzfin/config": "workspace:*",
     "turbo": "2.11.10",
     "typescript": "~6.0.3"

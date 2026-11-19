@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { AuthTokens, CurrentUser } from '../../domain/auth/session';
+import type { AuthTokens, CurrentUser, Session } from '../../domain/auth/session';
 import { domainError } from '../../shared/domain-error';
 import { err, ok, type Result } from '../../shared/result';
 import { InMemorySessionStore } from './in-memory-session-store';
@@ -51,7 +51,8 @@ const setup = (
   const auth = new FakeAuthGateway(authResult);
   const users = new FakeCurrentUserGateway(userResult);
   const sessions = new InMemorySessionStore();
-  return { auth, users, sessions, signIn: new SignIn(auth, users, sessions) };
+  const starter = { start: async (session: Session) => sessions.save(session) };
+  return { auth, users, sessions, signIn: new SignIn(auth, users, starter) };
 };
 
 describe('SignIn', () => {

@@ -34,13 +34,63 @@ export interface CurrentUserGateway {
 }
 
 /**
- * Onde a sessão ativa fica guardada. No KAN-25 só em memória;
- * a persistência no Keystore (`TokenStorage`) entra no KAN-29.
+ * Por que a sessão terminou:
+ * - `signed-out`: o usuário tocou em "Sair";
+ * - `expired`: a renovação foi recusada (refresh revogado ou sessão expirada no provedor).
+ */
+export type SessionEndReason = 'signed-out' | 'expired';
+
+/**
+ * Sessão ativa em memória, observável pela UI (guarda de rotas, saudação no Início).
+ * A cópia persistente fica no `TokenStorage`; quem mantém as duas em sincronia é o `SessionManager`.
  */
 export interface SessionStore {
   current(): Session | null;
   save(session: Session): void;
-  clear(): void;
+  clear(reason?: SessionEndReason): void;
+  /** Motivo do último fim de sessão; volta a `null` quando uma nova sessão é salva. */
+  endReason(): SessionEndReason | null;
   /** Avisa quando a sessão muda; devolve a função para cancelar a inscrição. */
   subscribe(listener: () => void): () => void;
 }
+
+/**
+ * Armazenamento persistente e cifrado da sessão (no Android: Keystore via SecureStore).
+ * Tokens nunca vão para AsyncStorage nem para logs.
+ */
+export interface TokenStorage {
+  load(): Promise<Session | null>;
+  save(session: Session): Promise<void>;
+  clear(): Promise<void>;
+}
+
+export type TokenRefreshErrorCode =
+  /** O provedor recusou o refresh token (revogado, rotacionado ou sessão expirada): é preciso entrar de novo. */
+  | 'auth.session-expired'
+  /** Sem internet ou provedor fora do ar: tentar de novo mais tarde, sem derrubar a sessão. */
+  | 'auth.offline';
+export type TokenRefreshError = DomainError<TokenRefreshErrorCode>;
+
+/** Operações com tokens já emitidos (renovação e encerramento da sessão no provedor). */
+export interface TokenGateway {
+  refresh(refreshToken: string): Promise<Result<AuthTokens, TokenRefreshError>>;
+  /**
+   * Encerra a sessão no provedor, invalidando o refresh token.
+   * Um token que o provedor já não reconhece conta como sucesso (não há mais o que revogar).
+   */
+  endSession(refreshToken: string): Promise<Result<void, DomainError<'auth.offline'>>>;
+}
+
+/** Refresh tokens que não puderam ser revogados (ex.: "Sair" sem internet), para tentar depois. */
+export interface PendingRevocationQueue {
+  add(refreshToken: string): Promise<void>;
+  list(): Promise<readonly string[]>;
+  remove(refreshToken: string): Promise<void>;
+}
+
+/** Relógio injetável (epoch em ms), para testar expiração sem esperar. */
+export interface Clock {
+  now(): number;
+}
+
+export const systemClock: Clock = { now: () => Date.now() };

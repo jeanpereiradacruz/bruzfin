@@ -37,8 +37,19 @@ gasto.reachedPercentOf(limite, 80); // alerta de 80% do limite
 
 1. `AuthGateway.authorize({ mode })` — Authorization Code + PKCE no provedor (`sign-in` ou `sign-up`);
 2. `CurrentUserGateway.fetchCurrentUser(accessToken)` — confirma o token na API (`/me`);
-3. `SessionStore.save(session)` — só com o perfil confirmado.
+3. `SessionManager.start(session)` — só com o perfil confirmado.
 
 Erros são valores com mensagens genéricas em pt-BR (`auth.cancelled`, `auth.failed`,
-`auth.profile-unavailable`). `InMemorySessionStore` guarda a sessão em memória (persistência no
-Keystore entra no KAN-29).
+`auth.profile-unavailable`).
+
+`SessionManager` cuida da sessão depois do login:
+
+- `restore()` ao abrir o app: lê o `TokenStorage` (Keystore) e renova se o access token venceu;
+- `getAccessToken()` / `handleUnauthorized(token)` para o cliente HTTP: renova antes de vencer
+  (margem de 60 s) e **uma única vez** para requisições simultâneas (o Keycloak rotaciona o refresh);
+- refresh recusado → `SessionStore.clear('expired')` (a tela de entrada mostra o aviso);
+- `signOut()` apaga do aparelho primeiro e depois encerra a sessão no provedor (`TokenGateway`);
+  sem internet, o refresh vai para a `PendingRevocationQueue` e é revogado depois.
+
+`AppLock` é o bloqueio opcional com biometria/PIN do aparelho (`DeviceAuthenticator`): bloqueia ao
+abrir o app com sessão e ao voltar após 5 minutos em segundo plano.

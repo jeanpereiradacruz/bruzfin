@@ -58,6 +58,68 @@ describe('cliente da API', () => {
     expect(getAccessToken).not.toHaveBeenCalled();
   });
 
+  it('em 401, pede um token novo e repete a requisição uma única vez', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(401, { status: 401 }))
+      .mockResolvedValueOnce(jsonResponse(200, { id: 'x', email: 'a@bruzfin.local' }));
+    const onUnauthorized = vi.fn(async () => 'token-novo');
+    configureApiClient({
+      baseUrl: 'http://localhost:8080',
+      getAccessToken: () => 'token-vencido',
+      onUnauthorized,
+      fetch: fetchMock,
+    });
+
+    const response = await getMe();
+
+    expect(response.status).toBe(200);
+    expect(onUnauthorized).toHaveBeenCalledWith('token-vencido');
+    const [, retry] = fetchMock.mock.calls[1] as unknown as [string, RequestInit];
+    expect(new Headers(retry.headers).get('Authorization')).toBe('Bearer token-novo');
+  });
+
+  it('em 401 sem token novo (sessão expirada), devolve o 401 sem repetir', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(401, { status: 401 }));
+    configureApiClient({
+      baseUrl: 'http://localhost:8080',
+      getAccessToken: () => 'token-vencido',
+      onUnauthorized: async () => null,
+      fetch: fetchMock,
+    });
+
+    const response = await getMe();
+
+    expect(response.status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('401 de novo depois de renovar não entra em laço', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(401, { status: 401 }));
+    const onUnauthorized = vi.fn(async () => 'token-novo');
+    configureApiClient({
+      baseUrl: 'http://localhost:8080',
+      getAccessToken: () => 'token-vencido',
+      onUnauthorized,
+      fetch: fetchMock,
+    });
+
+    expect((await getMe()).status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+  });
+
+  it('401 com Authorization explícito não aciona a renovação', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(401, { status: 401 }));
+    const onUnauthorized = vi.fn(async () => 'token-novo');
+    configureApiClient({ baseUrl: 'http://localhost:8080', onUnauthorized, fetch: fetchMock });
+
+    await getMe({ headers: { Authorization: 'Bearer recem-emitido' } });
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('falha com mensagem clara se o app esquecer de configurar', async () => {
     await expect(getMe()).rejects.toThrow('configureApiClient');
   });

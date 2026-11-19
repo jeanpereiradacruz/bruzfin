@@ -6,7 +6,10 @@ import { useEffect } from 'react';
 import { useUnistyles } from 'react-native-unistyles';
 import { AppProviders } from '../composition/AppProviders';
 import { useScreenCaptureProtection } from '../infrastructure/security/useScreenCaptureProtection';
+import { useAppLockLifecycle, useAppLockState } from '../presentation/hooks/useAppLock';
+import { useBootstrap } from '../presentation/hooks/useBootstrap';
 import { useSession } from '../presentation/hooks/useSession';
+import { LockScreen } from '../presentation/screens/LockScreen';
 import { fontAssets } from '../presentation/theme/fonts';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -14,23 +17,33 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts(fontAssets);
-  const { theme } = useUnistyles();
   useScreenCaptureProtection();
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
-
   return (
     <AppProviders>
+      <AppShell />
+    </AppProviders>
+  );
+}
+
+/** Mantém a splash até as fontes carregarem e a sessão ser restaurada do Keystore. */
+function AppShell() {
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const sessionReady = useBootstrap();
+  const { theme } = useUnistyles();
+  const ready = (fontsLoaded || fontError !== null) && sessionReady;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  if (!ready) return null;
+
+  return (
+    <>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
       <RootNavigator />
-    </AppProviders>
+      <AppLockGate />
+    </>
   );
 }
 
@@ -49,10 +62,19 @@ function RootNavigator() {
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="nova-compra" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="configuracoes" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="entrar" />
       </Stack.Protected>
     </Stack>
   );
+}
+
+/** Tela de bloqueio (biometria/PIN) sobre todo o conteúdo, quando ligada no Perfil. */
+function AppLockGate() {
+  useAppLockLifecycle();
+  const signedIn = useSession() !== null;
+  const { locked } = useAppLockState();
+  return signedIn && locked ? <LockScreen /> : null;
 }

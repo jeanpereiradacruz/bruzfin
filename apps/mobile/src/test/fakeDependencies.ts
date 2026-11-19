@@ -1,4 +1,5 @@
 import {
+  AppLock,
   type AuthorizationMode,
   domainError,
   err,
@@ -7,6 +8,7 @@ import {
   type Result,
   type Session,
   type SignInError,
+  type UnlockOutcome,
 } from '@bruzfin/core';
 import type { AppDependencies } from '../composition/dependencies';
 
@@ -22,10 +24,23 @@ export const testSession: Session = {
 
 type SignInOutcome = 'success' | 'cancelled' | 'failed';
 
-/** Dependências falsas: o login responde com o desfecho pedido, sem navegador nem rede. */
+type FakeOptions = {
+  /** Sessão já em memória antes de renderizar. */
+  signedIn?: boolean;
+  /** Sessão "salva no Keystore": aparece só depois do bootstrap. */
+  restoredSession?: boolean;
+  /** Bloqueio com biometria/PIN ligado. */
+  appLockEnabled?: boolean;
+  /** Resultado da biometria/PIN. */
+  unlockOutcome?: UnlockOutcome;
+  /** Aparelho tem biometria ou PIN configurado. */
+  deviceAuthAvailable?: boolean;
+};
+
+/** Dependências falsas: login, sessão e bloqueio respondem com o desfecho pedido, sem navegador nem rede. */
 export const createFakeDependencies = (
   outcome: SignInOutcome = 'success',
-  options: { signedIn?: boolean } = {},
+  options: FakeOptions = {},
 ) => {
   const sessionStore = new InMemorySessionStore();
   if (options.signedIn) sessionStore.save(testSession);
@@ -46,6 +61,37 @@ export const createFakeDependencies = (
     },
   );
 
-  const dependencies: AppDependencies = { sessionStore, signIn: { execute } };
-  return { dependencies, sessionStore, execute };
+  let lockEnabled = options.appLockEnabled ?? false;
+  const authenticate = jest.fn(async (_prompt: string) => options.unlockOutcome ?? 'success');
+  const appLock = new AppLock(
+    {
+      isEnabled: async () => lockEnabled,
+      setEnabled: async (value) => {
+        lockEnabled = value;
+      },
+    },
+    { isAvailable: async () => options.deviceAuthAvailable ?? true, authenticate },
+    () => sessionStore.current() !== null,
+  );
+  sessionStore.subscribe(() => {
+    if (sessionStore.current() === null) appLock.release();
+  });
+
+  const signOut = jest.fn(async () => {
+    sessionStore.clear('signed-out');
+  });
+
+  const bootstrap = jest.fn(async () => {
+    if (options.restoredSession) sessionStore.save(testSession);
+    await appLock.initialize();
+  });
+
+  const dependencies: AppDependencies = {
+    sessionStore,
+    signIn: { execute },
+    signOut,
+    appLock,
+    bootstrap,
+  };
+  return { dependencies, sessionStore, execute, signOut, appLock, authenticate, bootstrap };
 };

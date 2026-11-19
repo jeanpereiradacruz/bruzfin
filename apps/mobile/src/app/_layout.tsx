@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useUnistyles } from 'react-native-unistyles';
 import { AppProviders } from '../composition/AppProviders';
 import { useScreenCaptureProtection } from '../infrastructure/security/useScreenCaptureProtection';
+import { useSession } from '../presentation/hooks/useSession';
 import { fontAssets } from '../presentation/theme/fonts';
 
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -28,15 +29,30 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: theme.colors.surface100 },
-        }}
-      >
+      <RootNavigator />
+    </AppProviders>
+  );
+}
+
+/** Guarda de rotas: sem sessão só a tela de entrada existe; com sessão, as abas e os modais. */
+function RootNavigator() {
+  const { theme } = useUnistyles();
+  const signedIn = useSession() !== null;
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.colors.surface100 },
+      }}
+    >
+      <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="nova-compra" options={{ presentation: 'modal' }} />
-      </Stack>
-    </AppProviders>
+      </Stack.Protected>
+      <Stack.Protected guard={!signedIn}>
+        <Stack.Screen name="entrar" />
+      </Stack.Protected>
+    </Stack>
   );
 }

@@ -55,9 +55,12 @@ export async function bruzfinFetch<T>(url: string, options: RequestInit = {}): P
   }
   const headers = new Headers(options.headers);
   headers.set('Accept', 'application/json, application/problem+json');
-  const token = await current.getAccessToken?.();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+  // Um Authorization explícito vence o provedor (ex.: buscar o /me com o token recém-emitido no login).
+  if (!headers.has('Authorization')) {
+    const token = await current.getAccessToken?.();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
   }
 
   const doFetch = current.fetch ?? fetch;

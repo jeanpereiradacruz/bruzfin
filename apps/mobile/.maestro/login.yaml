@@ -1,0 +1,31 @@
+# E2E: login com o usuário de teste do realm local (infra/compose/keycloak/dev).
+# Pré-requisitos: docker compose de pé, API rodando (perfil local), dev build instalado e
+#   adb reverse tcp:8080 tcp:8080 && adb reverse tcp:8180 tcp:8180 && adb reverse tcp:8081 tcp:8081
+# Rodar: maestro test apps/mobile/.maestro
+# O Chrome não expõe os `id` do HTML no Custom Tab: os campos são achados pelos rótulos do Keycloak.
+appId: com.bruzfin.app
+name: Login com email e senha
+tags: [auth]
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 60000
+- tapOn:
+    id: "welcome-sign-in"
+# Se o Chrome ainda tiver a sessão SSO do Keycloak, ele volta direto ao app (sem formulário).
+- runFlow:
+    when:
+      visible: "Endereço de email"
+    commands:
+      - tapOn: "Endereço de email"
+      - inputText: "usuario@bruzfin.local"
+      - tapOn: "Senha"
+      - inputText: "Teste1234"
+      - hideKeyboard
+      - tapOn: "Entrar"
+- extendedWaitUntil:
+    visible: "Olá, Usuário"
+    timeout: 20000
+- assertVisible: "Início"

@@ -1,4 +1,27 @@
+export { InMemorySessionStore } from './application/auth/in-memory-session-store';
+export type {
+  AuthGateway,
+  AuthorizationError,
+  AuthorizationErrorCode,
+  AuthorizationMode,
+  CurrentUserError,
+  CurrentUserErrorCode,
+  CurrentUserGateway,
+  SessionStore,
+} from './application/auth/ports';
+export {
+  SignIn,
+  type SignInError,
+  type SignInErrorCode,
+  type SignInInput,
+} from './application/auth/sign-in';
 export type { UseCase } from './application/use-case';
+export type {
+  AuthTokens,
+  CurrentUser,
+  CurrentUserHousehold,
+  Session,
+} from './domain/auth/session';
 export {
   type Currency,
   type FormatOptions,

@@ -46,6 +46,18 @@ describe('cliente da API', () => {
     expect(new Headers(init.headers).has('Authorization')).toBe(false);
   });
 
+  it('mantém o Authorization explícito da chamada sem consultar o provedor', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { id: 'x', email: 'a@bruzfin.local' }));
+    const getAccessToken = vi.fn(() => 'token-da-sessao');
+    configureApiClient({ baseUrl: 'http://localhost:8080', getAccessToken, fetch: fetchMock });
+
+    await getMe({ headers: { Authorization: 'Bearer token-novo' } });
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new Headers(init.headers).get('Authorization')).toBe('Bearer token-novo');
+    expect(getAccessToken).not.toHaveBeenCalled();
+  });
+
   it('falha com mensagem clara se o app esquecer de configurar', async () => {
     await expect(getMe()).rejects.toThrow('configureApiClient');
   });

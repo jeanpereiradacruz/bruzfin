@@ -317,4 +317,58 @@ describe('SessionManager', () => {
       expect(queue.items).toEqual(['refresh-antigo']);
     });
   });
+
+  describe('ao atualizar o perfil da sessão', () => {
+    const household = { id: 'lar-1', name: 'Lar de Usuário', role: 'OWNER' as const };
+
+    it('grava o perfil novo na memória e no armazenamento seguro', async () => {
+      const { manager, sessions, storage } = setup();
+      await manager.start(session());
+
+      await manager.updateUser((user) => ({ ...user, household }));
+
+      expect(sessions.current()?.user.household).toEqual(household);
+      expect(storage.saved?.user.household).toEqual(household);
+      expect(storage.saved?.tokens.refreshToken).toBe('refresh-1');
+    });
+
+    it('sem sessão, não faz nada', async () => {
+      const { manager, sessions, storage } = setup();
+      await manager.updateUser((user) => ({ ...user, household }));
+      expect(sessions.current()).toBeNull();
+      expect(storage.saved).toBeNull();
+    });
+
+    it('durante uma renovação, mantém o refresh token rotacionado e o perfil novo', async () => {
+      const network = deferred<Result<AuthTokens, TokenRefreshError>>();
+      const { manager, sessions, storage } = setup({ refresh: () => network.promise });
+      await manager.start(session({ expiresAt: NOW - 1 }));
+
+      const token = manager.getAccessToken();
+      const update = manager.updateUser((user) => ({ ...user, household }));
+      network.resolve(renewed);
+      await Promise.all([token, update]);
+
+      expect(await token).toBe('access-2');
+      expect(sessions.current()?.tokens.refreshToken).toBe('refresh-2');
+      expect(sessions.current()?.user.household).toEqual(household);
+      expect(storage.saved?.tokens.refreshToken).toBe('refresh-2');
+      expect(storage.saved?.user.household).toEqual(household);
+    });
+
+    it('a troca de perfil que termina antes da renovação não se perde', async () => {
+      const network = deferred<Result<AuthTokens, TokenRefreshError>>();
+      const { manager, sessions, storage } = setup({ refresh: () => network.promise });
+      await manager.start(session({ expiresAt: NOW - 1 }));
+
+      const token = manager.getAccessToken();
+      await manager.updateUser((user) => ({ ...user, household }));
+      network.resolve(renewed);
+      await token;
+
+      expect(sessions.current()?.user.household).toEqual(household);
+      expect(storage.saved?.user.household).toEqual(household);
+      expect(storage.saved?.tokens.refreshToken).toBe('refresh-2');
+    });
+  });
 });

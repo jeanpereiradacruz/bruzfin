@@ -5,9 +5,86 @@
  * OpenAPI spec version: v1
  */
 import { bruzfinFetch } from '../http';
+/**
+ * Código de convite recém-gerado; não é possível vê-lo de novo
+ */
+export interface HouseholdInvite {
+  code: string;
+  expiresAt: string;
+}
+
+export interface AcceptHouseholdInviteRequest {
+  /**
+     * @minLength 0
+     * @maxLength 20
+     */
+  code: string;
+}
+
+/**
+ * Papel do usuário autenticado no lar
+ */
+export type HouseholdRole = typeof HouseholdRole[keyof typeof HouseholdRole];
+
+
+export const HouseholdRole = {
+  OWNER: 'OWNER',
+  MEMBER: 'MEMBER',
+} as const;
+
+export type HouseholdMemberRole = typeof HouseholdMemberRole[keyof typeof HouseholdMemberRole];
+
+
+export const HouseholdMemberRole = {
+  OWNER: 'OWNER',
+  MEMBER: 'MEMBER',
+} as const;
+
+export interface HouseholdMember {
+  id: string;
+  email: string;
+  /** @nullable */
+  name?: string | null;
+  role: HouseholdMemberRole;
+  joinedAt: string;
+}
+
+/**
+ * Lar do usuário e os membros dele
+ */
+export interface Household {
+  id: string;
+  name: string;
+  /** Papel do usuário autenticado no lar */
+  role: HouseholdRole;
+  /** Membros por ordem de entrada */
+  members: HouseholdMember[];
+}
+
+export interface RenameHouseholdRequest {
+  /**
+     * @minLength 0
+     * @maxLength 60
+     */
+  name: string;
+}
+
+/**
+ * Papel do usuário no lar: quem criou (OWNER) ou quem entrou por convite (MEMBER)
+ */
+export type MeHouseholdRole = typeof MeHouseholdRole[keyof typeof MeHouseholdRole];
+
+
+export const MeHouseholdRole = {
+  OWNER: 'OWNER',
+  MEMBER: 'MEMBER',
+} as const;
+
 export interface MeHousehold {
   id: string;
   name: string;
+  /** Papel do usuário no lar: quem criou (OWNER) ou quem entrou por convite (MEMBER) */
+  role: MeHouseholdRole;
 }
 
 /**
@@ -18,7 +95,7 @@ export interface Me {
   email: string;
   /** @nullable */
   name?: string | null;
-  /** Lar do usuário; ausente enquanto ele não tiver um */
+  /** Lar do usuário; ausente enquanto o lar automático não estiver pronto */
   household?: MeHousehold;
 }
 
@@ -35,11 +112,298 @@ export interface About {
  */
 export interface Problem {
   title: string;
-  detail?: string;
-  status: number;
-  type?: string;
   instance?: string;
+  detail?: string;
+  type?: string;
+  status: number;
+  /** Código estável do erro de negócio, quando houver (ex.: household.invite-expired) */
+  code?: string;
 }
+
+export type createHouseholdInviteResponse201 = {
+  data: HouseholdInvite
+  status: 201
+}
+
+export type createHouseholdInviteResponse401 = {
+  data: Problem
+  status: 401
+}
+
+export type createHouseholdInviteResponse403 = {
+  data: Problem
+  status: 403
+}
+
+export type createHouseholdInviteResponse409 = {
+  data: Problem
+  status: 409
+}
+
+export type createHouseholdInviteResponse429 = {
+  data: Problem
+  status: 429
+}
+
+export type createHouseholdInviteResponseSuccess = (createHouseholdInviteResponse201) & {
+  headers: Headers;
+};
+export type createHouseholdInviteResponseError = (createHouseholdInviteResponse401 | createHouseholdInviteResponse403 | createHouseholdInviteResponse409 | createHouseholdInviteResponse429) & {
+  headers: Headers;
+};
+
+export type createHouseholdInviteResponse = (createHouseholdInviteResponseSuccess | createHouseholdInviteResponseError)
+
+export const getCreateHouseholdInviteUrl = () => {
+
+
+
+
+  return `/api/v1/household/invites`
+}
+
+/**
+ * @summary Gera um código de convite (48 horas, uso único); o código anterior ainda não usado deixa de valer
+ */
+export const createHouseholdInvite = async ( options?: Parameters<typeof bruzfinFetch>[1]): Promise<createHouseholdInviteResponse> => {
+
+  return bruzfinFetch<createHouseholdInviteResponse>(getCreateHouseholdInviteUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+export type acceptHouseholdInviteResponse200 = {
+  data: Household
+  status: 200
+}
+
+export type acceptHouseholdInviteResponse400 = {
+  data: Problem
+  status: 400
+}
+
+export type acceptHouseholdInviteResponse401 = {
+  data: Problem
+  status: 401
+}
+
+export type acceptHouseholdInviteResponse403 = {
+  data: Problem
+  status: 403
+}
+
+export type acceptHouseholdInviteResponse404 = {
+  data: Problem
+  status: 404
+}
+
+export type acceptHouseholdInviteResponse409 = {
+  data: Problem
+  status: 409
+}
+
+export type acceptHouseholdInviteResponse410 = {
+  data: Problem
+  status: 410
+}
+
+export type acceptHouseholdInviteResponse429 = {
+  data: Problem
+  status: 429
+}
+
+export type acceptHouseholdInviteResponse503 = {
+  data: Problem
+  status: 503
+}
+
+export type acceptHouseholdInviteResponseSuccess = (acceptHouseholdInviteResponse200) & {
+  headers: Headers;
+};
+export type acceptHouseholdInviteResponseError = (acceptHouseholdInviteResponse400 | acceptHouseholdInviteResponse401 | acceptHouseholdInviteResponse403 | acceptHouseholdInviteResponse404 | acceptHouseholdInviteResponse409 | acceptHouseholdInviteResponse410 | acceptHouseholdInviteResponse429 | acceptHouseholdInviteResponse503) & {
+  headers: Headers;
+};
+
+export type acceptHouseholdInviteResponse = (acceptHouseholdInviteResponseSuccess | acceptHouseholdInviteResponseError)
+
+export const getAcceptHouseholdInviteUrl = () => {
+
+
+
+
+  return `/api/v1/household/invites/accept`
+}
+
+/**
+ * @summary Entra no lar do código de convite
+ */
+export const acceptHouseholdInvite = async (acceptHouseholdInviteRequest: AcceptHouseholdInviteRequest, options?: Parameters<typeof bruzfinFetch>[1]): Promise<acceptHouseholdInviteResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bruzfinFetch<acceptHouseholdInviteResponse>(getAcceptHouseholdInviteUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(acceptHouseholdInviteRequest)
+  }
+);}
+
+
+
+export type getHouseholdResponse200 = {
+  data: Household
+  status: 200
+}
+
+export type getHouseholdResponse401 = {
+  data: Problem
+  status: 401
+}
+
+export type getHouseholdResponse403 = {
+  data: Problem
+  status: 403
+}
+
+export type getHouseholdResponse409 = {
+  data: Problem
+  status: 409
+}
+
+export type getHouseholdResponse429 = {
+  data: Problem
+  status: 429
+}
+
+export type getHouseholdResponseSuccess = (getHouseholdResponse200) & {
+  headers: Headers;
+};
+export type getHouseholdResponseError = (getHouseholdResponse401 | getHouseholdResponse403 | getHouseholdResponse409 | getHouseholdResponse429) & {
+  headers: Headers;
+};
+
+export type getHouseholdResponse = (getHouseholdResponseSuccess | getHouseholdResponseError)
+
+export const getGetHouseholdUrl = () => {
+
+
+
+
+  return `/api/v1/household`
+}
+
+/**
+ * @summary Lar do usuário com os membros
+ */
+export const getHousehold = async ( options?: Parameters<typeof bruzfinFetch>[1]): Promise<getHouseholdResponse> => {
+
+  return bruzfinFetch<getHouseholdResponse>(getGetHouseholdUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+export type renameHouseholdResponse200 = {
+  data: Household
+  status: 200
+}
+
+export type renameHouseholdResponse400 = {
+  data: Problem
+  status: 400
+}
+
+export type renameHouseholdResponse401 = {
+  data: Problem
+  status: 401
+}
+
+export type renameHouseholdResponse403 = {
+  data: Problem
+  status: 403
+}
+
+export type renameHouseholdResponse409 = {
+  data: Problem
+  status: 409
+}
+
+export type renameHouseholdResponse429 = {
+  data: Problem
+  status: 429
+}
+
+export type renameHouseholdResponseSuccess = (renameHouseholdResponse200) & {
+  headers: Headers;
+};
+export type renameHouseholdResponseError = (renameHouseholdResponse400 | renameHouseholdResponse401 | renameHouseholdResponse403 | renameHouseholdResponse409 | renameHouseholdResponse429) & {
+  headers: Headers;
+};
+
+export type renameHouseholdResponse = (renameHouseholdResponseSuccess | renameHouseholdResponseError)
+
+export const getRenameHouseholdUrl = () => {
+
+
+
+
+  return `/api/v1/household`
+}
+
+/**
+ * @summary Troca o nome do lar
+ */
+export const renameHousehold = async (renameHouseholdRequest: RenameHouseholdRequest, options?: Parameters<typeof bruzfinFetch>[1]): Promise<renameHouseholdResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return bruzfinFetch<renameHouseholdResponse>(getRenameHouseholdUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(renameHouseholdRequest)
+  }
+);}
+
+
 
 export type getMeResponse200 = {
   data: Me
@@ -79,7 +443,7 @@ export const getGetMeUrl = () => {
 }
 
 /**
- * @summary Perfil do usuário autenticado (criado no primeiro acesso)
+ * @summary Perfil do usuário autenticado, com o lar e o papel dele
  */
 export const getMe = async ( options?: Parameters<typeof bruzfinFetch>[1]): Promise<getMeResponse> => {
 

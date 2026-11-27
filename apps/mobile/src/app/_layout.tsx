@@ -2,7 +2,8 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
+import { View } from 'react-native';
 import { useUnistyles } from 'react-native-unistyles';
 import { AppProviders } from '../composition/AppProviders';
 import { useScreenCaptureProtection } from '../infrastructure/security/useScreenCaptureProtection';
@@ -41,8 +42,9 @@ function AppShell() {
   return (
     <>
       <StatusBar style={theme.name === 'dark' ? 'light' : 'dark'} />
-      <RootNavigator />
-      <AppLockGate />
+      <AppLockGate>
+        <RootNavigator />
+      </AppLockGate>
     </>
   );
 }
@@ -71,10 +73,25 @@ function RootNavigator() {
   );
 }
 
-/** Tela de bloqueio (biometria/PIN) sobre todo o conteúdo, quando ligada no Perfil. */
-function AppLockGate() {
+/**
+ * Tela de bloqueio (biometria/PIN) sobre todo o conteúdo, quando ligada no Perfil.
+ * Enquanto bloqueado, o conteúdo por baixo some também para o TalkBack (não só da tela).
+ */
+function AppLockGate({ children }: { readonly children: ReactNode }) {
   useAppLockLifecycle();
   const signedIn = useSession() !== null;
   const { locked } = useAppLockState();
-  return signedIn && locked ? <LockScreen /> : null;
+  const showLock = signedIn && locked;
+  return (
+    <>
+      <View
+        style={{ flex: 1 }}
+        importantForAccessibility={showLock ? 'no-hide-descendants' : 'auto'}
+        accessibilityElementsHidden={showLock}
+      >
+        {children}
+      </View>
+      {showLock ? <LockScreen /> : null}
+    </>
+  );
 }

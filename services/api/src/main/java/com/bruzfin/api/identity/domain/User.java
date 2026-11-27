@@ -28,6 +28,15 @@ public record User(
         return new User(UserId.newId(), claims.subject(), claims.email(), claims.name(), now, now);
     }
 
+    /** Nome para exibição: o nome do perfil ou, sem ele, a parte do email antes do @. */
+    public String displayName() {
+        if (name != null && !name.isBlank()) {
+            return name;
+        }
+        int at = email.indexOf('@');
+        return at > 0 ? email.substring(0, at) : email;
+    }
+
     /** O perfil guardado já é igual ao do token? */
     public boolean isInSyncWith(IdentityClaims claims) {
         return email.equals(claims.email()) && Objects.equals(name, claims.name());

@@ -10,11 +10,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.bruzfin.api.identity.HouseholdMembership;
+import com.bruzfin.api.identity.HouseholdMembership.Membership;
 import com.bruzfin.api.identity.application.port.in.GetCurrentUserUseCase;
 import com.bruzfin.api.identity.domain.IdentityClaims;
 import com.bruzfin.api.identity.domain.User;
 import com.bruzfin.api.platform.security.SecurityConfiguration;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +40,9 @@ class MeControllerTest {
 
     @MockitoBean
     private GetCurrentUserUseCase getCurrentUser;
+
+    @MockitoBean
+    private HouseholdMembership households;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -60,10 +67,13 @@ class MeControllerTest {
     }
 
     @Test
-    @DisplayName("com token válido devolve o perfil, sem lar por enquanto")
+    @DisplayName("com token válido devolve o perfil com o lar e o papel do usuário")
     void returnsProfile() throws Exception {
         User user = User.provision(new IdentityClaims("sub-1", "a@bruzfin.local", "Pessoa A"), Instant.now());
+        UUID household = UUID.randomUUID();
         given(getCurrentUser.getCurrentUser(any())).willReturn(user);
+        given(households.findFor(user.id().value()))
+                .willReturn(Optional.of(new Membership(household, "Lar de Pessoa", "OWNER")));
 
         mvc.perform(get("/api/v1/me").with(jwt().jwt(token -> token
                         .subject("sub-1").claim("email", "a@bruzfin.local")
@@ -72,8 +82,23 @@ class MeControllerTest {
                 .andExpect(jsonPath("$.id").value(user.id().value().toString()))
                 .andExpect(jsonPath("$.email").value("a@bruzfin.local"))
                 .andExpect(jsonPath("$.name").value("Pessoa A"))
-                .andExpect(jsonPath("$.household").doesNotExist())
+                .andExpect(jsonPath("$.household.id").value(household.toString()))
+                .andExpect(jsonPath("$.household.name").value("Lar de Pessoa"))
+                .andExpect(jsonPath("$.household.role").value("OWNER"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"));
+    }
+
+    @Test
+    @DisplayName("enquanto o lar automático não fica pronto, o perfil vem sem lar")
+    void returnsProfileWithoutHousehold() throws Exception {
+        User user = User.provision(new IdentityClaims("sub-1", "a@bruzfin.local", null), Instant.now());
+        given(getCurrentUser.getCurrentUser(any())).willReturn(user);
+        given(households.findFor(user.id().value())).willReturn(Optional.empty());
+
+        mvc.perform(get("/api/v1/me").with(jwt().jwt(token -> token
+                        .subject("sub-1").claim("email", "a@bruzfin.local").claim("email_verified", true))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.household").doesNotExist());
     }
 
     @Test

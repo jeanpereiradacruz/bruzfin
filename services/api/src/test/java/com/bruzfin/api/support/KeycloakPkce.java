@@ -29,6 +29,8 @@ public final class KeycloakPkce {
     public static final String REDIRECT_URI = "bruzfin://auth/callback";
     public static final String TEST_USER = "usuario@bruzfin.local";
     public static final String TEST_PASSWORD = "Teste1234";
+    /** Segundo usuário do realm de desenvolvimento, para os testes de convite. */
+    public static final String GUEST_USER = "convidado@bruzfin.local";
 
     private static final HttpClient HTTP = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NEVER)
@@ -44,6 +46,11 @@ public final class KeycloakPkce {
 
     /** Login completo do usuário de teste; devolve a resposta do endpoint de token. */
     public JsonNode login() {
+        return login(TEST_USER);
+    }
+
+    /** Login completo de um usuário do realm de desenvolvimento (senha {@link #TEST_PASSWORD}). */
+    public JsonNode login(String username) {
         String verifier = randomUrlSafe(48);
         HttpResponse<String> page = authorize(Map.of("code_challenge", challenge(verifier), "code_challenge_method", "S256"));
         String action = loginFormAction(page.body());
@@ -53,7 +60,7 @@ public final class KeycloakPkce {
         HttpResponse<String> login = send(HttpRequest.newBuilder(URI.create(action))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .header("Cookie", cookies(page))
-                .POST(HttpRequest.BodyPublishers.ofString(form(Map.of("username", TEST_USER, "password", TEST_PASSWORD))))
+                .POST(HttpRequest.BodyPublishers.ofString(form(Map.of("username", username, "password", TEST_PASSWORD))))
                 .build());
         String redirect = location(login);
         if (!redirect.startsWith(REDIRECT_URI)) {
@@ -69,7 +76,11 @@ public final class KeycloakPkce {
     }
 
     public String accessToken() {
-        return login().get("access_token").asString();
+        return accessToken(TEST_USER);
+    }
+
+    public String accessToken(String username) {
+        return login(username).get("access_token").asString();
     }
 
     public HttpResponse<String> authorize(Map<String, String> extra) {

@@ -24,10 +24,15 @@ O módulo `about` (`GET /api/v1/about`) é o exemplo de referência. Módulos at
 
 | Módulo | O que faz |
 |---|---|
-| `identity` | usuário da API, criado no primeiro acesso a partir do token (`GET /api/v1/me`) |
+| `identity` | usuário da API, criado no primeiro acesso a partir do token (`GET /api/v1/me`); publica `UserProvisioned` e preenche o escopo de acesso de cada requisição |
+| `household` | lar (monitoramento de conta compartilhado): lar automático, membros, convites (`/api/v1/household`) |
 | `about` | nome e versão da API |
-| `platform` | técnico, sem regra de negócio: segurança (Resource Server), rate limit, OpenAPI, health check do Kafka |
-| `shared` | núcleo compartilhado (aberto): `UuidV7` |
+| `platform` | técnico, sem regra de negócio: segurança (Resource Server), rate limit, OpenAPI, health check do Kafka, transações com Row-Level Security |
+| `shared` | núcleo compartilhado (aberto): `UuidV7`, escopo de acesso (`AccessScope`) |
+
+Os módulos conversam pela API pública (o pacote raiz de cada um) e por eventos: `household` ouve o
+`UserProvisioned` da identidade e implementa `HouseholdMembership`, que a identidade usa no `/me`.
+A identidade não conhece o módulo do lar.
 
 ## Segurança
 
@@ -36,6 +41,24 @@ O módulo `about` (`GET /api/v1/about`) é o exemplo de referência. Módulos at
 - Exige `email_verified=true`, `sub` e `email` no token: sem token **401**, email não confirmado **403**. Erros em Problem Details (RFC 9457), sem stack trace e sem ecoar o token.
 - Sem sessão, sem CSRF (só Bearer), CORS desligado até existir o web (`bruzfin.security.cors-allowed-origins`), CSP `default-src 'none'`.
 - **Rate limit** (Bucket4j no Valkey): 120 req/min por usuário e 30 req/min por IP sem token; excesso responde **429** com `Retry-After`. Se o Valkey cair, as requisições passam e o problema vai para o log (fail-open).
+
+## Lar e Row-Level Security
+
+- No primeiro acesso a identidade grava o usuário e publica `UserProvisioned` na mesma transação
+  (registro de eventos do Modulith). O módulo do lar cria "Lar de <primeiro nome>" logo depois do
+  commit, ainda na mesma requisição; se falhar, a publicação fica pendente e é reenviada ao reiniciar.
+- Convite: código de 8 caracteres (Crockford Base32, `SecureRandom`), guardado só como SHA-256,
+  48 horas e uso único; gerar outro invalida o anterior. Ao aceitar, o lar automático do convidado é
+  descartado se ele estiver sozinho e sem dados (módulos com dados implementam `HouseholdDataProbe`);
+  senão o aceite é recusado. 5 códigos errados em 15 minutos bloqueiam o usuário por esse tempo
+  (contador no Valkey; sem Valkey o aceite falha).
+- Erros do lar vêm em Problem Details com `code` estável (`household.invite-expired`, ...).
+- **RLS**: `household`, `household_member` e `household_invite` têm `FORCE ROW LEVEL SECURITY`.
+  Cada transação informa `app.user_id` e `app.household_id` com `SET LOCAL`: o
+  `RowLevelSecurityTransactionManager` faz isso a partir do `AccessScopeHolder` (preenchido depois
+  da autenticação), e os casos de uso do lar também o fazem pela porta `DataScope`. Sem escopo,
+  nenhuma linha dessas tabelas aparece. A API precisa conectar com um usuário **sem superusuário**
+  (superusuário ignora a RLS); os testes de integração usam um assim.
 
 ## Regras verificadas no build
 
@@ -59,11 +82,15 @@ O módulo `about` (`GET /api/v1/about`) é o exemplo de referência. Módulos at
 
 | Rota | Descrição |
 |---|---|
-| `GET /api/v1/me` | perfil do usuário autenticado (criado no primeiro acesso) |
+| `GET /api/v1/me` | perfil do usuário autenticado (criado no primeiro acesso), com o lar e o papel (`OWNER`/`MEMBER`) |
+| `GET /api/v1/household` | lar do usuário com os membros |
+| `PATCH /api/v1/household` | troca o nome do lar |
+| `POST /api/v1/household/invites` | gera um código de convite (201) |
+| `POST /api/v1/household/invites/accept` | entra no lar do código |
 | `GET /api/v1/about` | nome e versão da API |
 | `GET /actuator/health` | health check (com probes `liveness`/`readiness`); no profile `local` mostra `db`, `redis` (Valkey) e `kafka` |
 | `GET /v3/api-docs` | contrato OpenAPI (usado pelo orval para gerar o cliente do app); sem token só no profile `local` |
 
 ## Banco
 
-Migrações Flyway em `src/main/resources/db/migration`. `V1` cria a tabela `event_publication` do registro de eventos do Spring Modulith (Transactional Outbox); `V2` cria `app_user` (id UUIDv7, `keycloak_sub` único, email, nome). O Hibernate só valida o schema (`ddl-auto: validate`).
+Migrações Flyway em `src/main/resources/db/migration`. `V1` cria a tabela `event_publication` do registro de eventos do Spring Modulith (Transactional Outbox); `V2` cria `app_user` (id UUIDv7, `keycloak_sub` único, email, nome); `V3` cria o lar, os membros e os convites com as políticas de RLS e dá um lar a quem já existia. O Hibernate só valida o schema (`ddl-auto: validate`).

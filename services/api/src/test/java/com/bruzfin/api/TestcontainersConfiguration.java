@@ -18,10 +18,31 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
+    /** Usuário da API no banco de teste: dono das tabelas, mas sem superusuário (como no compose e na nuvem). */
+    public static final String APP_DB_USER = "bruzfin";
+    public static final String APP_DB_PASSWORD = "bruzfin-test";
+
+    /**
+     * PostgreSQL com o usuário {@code bruzfin} sem superusuário: superusuário ignora a Row-Level Security,
+     * então a API dos testes usa o mesmo tipo de usuário de produção.
+     */
     @Bean
-    @ServiceConnection
     PostgreSQLContainer postgresContainer() {
-        return new PostgreSQLContainer("postgres:18.6-alpine");
+        return new PostgreSQLContainer("postgres:18.6-alpine")
+                .withInitScript("db/test-app-role.sql");
+    }
+
+    @Bean
+    DynamicPropertyRegistrar appDatabase(PostgreSQLContainer postgres) {
+        return registry -> {
+            registry.add("spring.datasource.url", () -> appJdbcUrl(postgres));
+            registry.add("spring.datasource.username", () -> APP_DB_USER);
+            registry.add("spring.datasource.password", () -> APP_DB_PASSWORD);
+        };
+    }
+
+    public static String appJdbcUrl(PostgreSQLContainer postgres) {
+        return "jdbc:postgresql://" + postgres.getHost() + ":" + postgres.getMappedPort(5432) + "/bruzfin";
     }
 
     /** Valkey fala o protocolo Redis: o Spring Boot o configura como uma conexão "redis". */

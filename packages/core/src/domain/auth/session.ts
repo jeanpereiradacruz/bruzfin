@@ -10,10 +10,11 @@ export type AuthTokens = {
   readonly expiresAt: number;
 };
 
-/** Lar do usuário (monitoramento de conta compartilhado). */
+/** Lar do usuário (monitoramento de conta compartilhado) e o papel dele nesse lar. */
 export type CurrentUserHousehold = {
   readonly id: string;
   readonly name: string;
+  readonly role: 'OWNER' | 'MEMBER';
 };
 
 /** Perfil do usuário autenticado, como a API devolve em `/api/v1/me`. */
@@ -21,7 +22,7 @@ export type CurrentUser = {
   readonly id: string;
   readonly email: string;
   readonly name: string | null;
-  /** `null` enquanto o usuário não participa de um lar. */
+  /** `null` só enquanto o lar automático do primeiro acesso não fica pronto. */
   readonly household: CurrentUserHousehold | null;
 };
 

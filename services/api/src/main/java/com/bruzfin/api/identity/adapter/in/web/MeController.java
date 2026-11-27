@@ -1,7 +1,8 @@
 package com.bruzfin.api.identity.adapter.in.web;
 
+import com.bruzfin.api.identity.HouseholdMembership;
 import com.bruzfin.api.identity.application.port.in.GetCurrentUserUseCase;
-import com.bruzfin.api.identity.domain.IdentityClaims;
+import com.bruzfin.api.identity.domain.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jmolecules.architecture.hexagonal.PrimaryAdapter;
@@ -18,16 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 class MeController {
 
     private final GetCurrentUserUseCase getCurrentUser;
+    private final HouseholdMembership households;
 
-    MeController(GetCurrentUserUseCase getCurrentUser) {
+    MeController(GetCurrentUserUseCase getCurrentUser, HouseholdMembership households) {
         this.getCurrentUser = getCurrentUser;
+        this.households = households;
     }
 
     @GetMapping
-    @Operation(operationId = "getMe", summary = "Perfil do usuário autenticado (criado no primeiro acesso)")
+    @Operation(operationId = "getMe", summary = "Perfil do usuário autenticado, com o lar e o papel dele")
     MeResponse me(@AuthenticationPrincipal Jwt jwt) {
-        IdentityClaims claims = new IdentityClaims(
-                jwt.getSubject(), jwt.getClaimAsString("email"), jwt.getClaimAsString("name"));
-        return MeResponse.from(getCurrentUser.getCurrentUser(claims));
+        User user = getCurrentUser.getCurrentUser(AuthenticatedClaims.from(jwt));
+        return MeResponse.from(user, households.findFor(user.id().value()).orElse(null));
     }
 }

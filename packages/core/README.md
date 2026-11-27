@@ -53,3 +53,11 @@ Erros são valores com mensagens genéricas em pt-BR (`auth.cancelled`, `auth.fa
 
 `AppLock` é o bloqueio opcional com biometria/PIN do aparelho (`DeviceAuthenticator`): bloqueia ao
 abrir o app com sessão e ao voltar após 5 minutos em segundo plano.
+
+## Lar
+
+`HouseholdService` (ver, renomear, convidar, entrar com código) fala com a API pelo `HouseholdGateway`
+e mantém `CurrentUser.household` igual ao da API por `SessionUserUpdater` (o `SessionManager.updateUser`).
+Valida antes de ir à rede com `validateHouseholdName` e `normalizeInviteCode` (mesmas regras da API).
+As gravações da sessão (`start`, renovação, `updateUser`) passam por uma fila: uma troca de lar durante
+uma renovação não sobrescreve o refresh token rotacionado.

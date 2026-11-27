@@ -39,6 +39,26 @@ describe('ApiCurrentUserGateway', () => {
     expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer token-novo');
   });
 
+  it('inclui o lar e o papel do usuário quando a API manda', async () => {
+    configureApiClient({
+      baseUrl: 'http://localhost:8080',
+      fetch: respond(200, {
+        id: 'u-1',
+        email: 'usuario@bruzfin.local',
+        name: null,
+        household: { id: 'lar-1', name: 'Lar de Usuário', role: 'OWNER' },
+      }) as unknown as typeof fetch,
+    });
+
+    const result = await new ApiCurrentUserGateway().fetchCurrentUser('token');
+
+    expect(result.ok && result.value.household).toEqual({
+      id: 'lar-1',
+      name: 'Lar de Usuário',
+      role: 'OWNER',
+    });
+  });
+
   it('resposta diferente de 200 vira perfil indisponível', async () => {
     configureApiClient({
       baseUrl: 'http://localhost:8080',

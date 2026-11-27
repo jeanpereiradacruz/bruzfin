@@ -32,7 +32,7 @@ const session: Session = {
     id: '019a0000-0000-7000-8000-000000000001',
     email: 'usuario@bruzfin.local',
     name: null,
-    household: { id: '019a0000-0000-7000-8000-000000000002', name: 'Casa' },
+    household: { id: '019a0000-0000-7000-8000-000000000002', name: 'Casa', role: 'MEMBER' },
   },
 };
 
@@ -59,6 +59,16 @@ describe('SecureTokenStorage', () => {
     const { driver, items } = memoryStore();
     items.set(SECURE_KEYS.session, JSON.stringify({ tokens: { accessToken: 1 } }));
     expect(await new SecureTokenStorage(driver).load()).toBeNull();
+  });
+
+  it('lar salvo sem o papel (versão anterior) não derruba a sessão: o lar volta a ser buscado', async () => {
+    const { driver, items } = memoryStore();
+    const old = { ...session, user: { ...session.user, household: { id: 'lar', name: 'Casa' } } };
+    items.set(SECURE_KEYS.session, JSON.stringify(old));
+    expect(await new SecureTokenStorage(driver).load()).toEqual({
+      ...session,
+      user: { ...session.user, household: null },
+    });
   });
 
   it('clear apaga a sessão do aparelho', async () => {

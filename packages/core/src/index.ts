@@ -32,6 +32,13 @@ export {
   type SignInErrorCode,
   type SignInInput,
 } from './application/auth/sign-in';
+export { HouseholdService } from './application/household/household-service';
+export type {
+  HouseholdError,
+  HouseholdErrorCode,
+  HouseholdGateway,
+  SessionUserUpdater,
+} from './application/household/ports';
 export type { UseCase } from './application/use-case';
 export type {
   AuthTokens,
@@ -39,6 +46,15 @@ export type {
   CurrentUserHousehold,
   Session,
 } from './domain/auth/session';
+export {
+  HOUSEHOLD_NAME_MAX_LENGTH,
+  type Household,
+  type HouseholdInvite,
+  type HouseholdMember,
+  type HouseholdRole,
+  normalizeInviteCode,
+  validateHouseholdName,
+} from './domain/household/household';
 export {
   type Currency,
   type FormatOptions,

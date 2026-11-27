@@ -1,12 +1,14 @@
 import { configureApiClient } from '@bruzfin/api-client';
 import {
   AppLock,
+  HouseholdService,
   InMemorySessionStore,
   SessionManager,
   type SessionStore,
   SignIn,
 } from '@bruzfin/core';
 import { ApiCurrentUserGateway } from '../infrastructure/api/ApiCurrentUserGateway';
+import { ApiHouseholdGateway } from '../infrastructure/api/ApiHouseholdGateway';
 import { ExpoAuthSessionGateway } from '../infrastructure/auth/ExpoAuthSessionGateway';
 import { AUTH_REDIRECT_URI, readAppConfig } from '../infrastructure/config/env';
 import { ExpoDeviceAuthenticator } from '../infrastructure/security/ExpoDeviceAuthenticator';
@@ -32,6 +34,8 @@ export type AppDependencies = {
   /** Sai da conta: apaga os tokens do aparelho e encerra a sessão no Keycloak (ou agenda, se offline). */
   readonly signOut: () => Promise<void>;
   readonly appLock: AppLockPort;
+  /** Lar do usuário: ver, renomear, convidar e entrar com código. */
+  readonly household: Pick<HouseholdService, 'load' | 'rename' | 'createInvite' | 'acceptInvite'>;
   /** Ao abrir o app: restaura a sessão do Keystore (renovando se venceu) e prepara o bloqueio. */
   readonly bootstrap: () => Promise<void>;
 };
@@ -73,6 +77,7 @@ export const createAppDependencies = (): AppDependencies => {
     signIn: new SignIn(authGateway, new ApiCurrentUserGateway(), sessionManager),
     signOut: () => sessionManager.signOut(),
     appLock,
+    household: new HouseholdService(new ApiHouseholdGateway(), sessionManager),
     bootstrap: async () => {
       await sessionManager.restore();
       await appLock.initialize();

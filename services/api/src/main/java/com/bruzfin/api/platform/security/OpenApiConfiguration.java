@@ -67,7 +67,9 @@ class OpenApiConfiguration {
                 "title", new StringSchema(),
                 "status", new IntegerSchema(),
                 "detail", new StringSchema(),
-                "instance", new StringSchema())));
+                "instance", new StringSchema(),
+                "code", new StringSchema().description(
+                        "Código estável do erro de negócio, quando houver (ex.: household.invite-expired)"))));
         problem.setRequired(List.of("title", "status"));
         return problem;
     }

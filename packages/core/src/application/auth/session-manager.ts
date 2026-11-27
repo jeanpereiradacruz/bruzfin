@@ -1,4 +1,4 @@
-import type { AuthTokens, Session } from '../../domain/auth/session';
+import type { AuthTokens, CurrentUser, Session } from '../../domain/auth/session';
 import {
   type Clock,
   type PendingRevocationQueue,
@@ -30,6 +30,11 @@ const MAX_PENDING_REVOCATIONS = 5;
 export class SessionManager {
   private readonly refreshMarginMs: number;
   private refreshing: Promise<string | null> | null = null;
+  /**
+   * Fila das gravações da sessão (Keystore + memória). Uma de cada vez, sempre sobre a sessão mais
+   * recente: uma renovação e uma troca de perfil simultâneas não sobrescrevem o refresh token novo.
+   */
+  private writes: Promise<unknown> = Promise.resolve();
 
   constructor(
     private readonly tokens: TokenGateway,
@@ -63,9 +68,25 @@ export class SessionManager {
 
   /** Inicia uma sessão nova (após o login): guarda em memória e no armazenamento seguro. */
   async start(session: Session): Promise<void> {
-    await this.persist(session);
-    this.sessions.save(session);
+    await this.serialized(async () => {
+      await this.persist(session);
+      this.sessions.save(session);
+    });
     void this.flushPendingRevocations();
+  }
+
+  /**
+   * Atualiza o perfil da sessão atual (ex.: o lar mudou) na memória e no armazenamento seguro.
+   * Sem sessão, não faz nada.
+   */
+  async updateUser(update: (user: CurrentUser) => CurrentUser): Promise<void> {
+    await this.serialized(async () => {
+      const current = this.sessions.current();
+      if (!current) return;
+      const updated: Session = { ...current, user: update(current.user) };
+      await this.persist(updated);
+      if (this.sessions.current() === current) this.sessions.save(updated);
+    });
   }
 
   /**
@@ -102,7 +123,7 @@ export class SessionManager {
     this.refreshing = null;
     this.sessions.clear('signed-out');
     try {
-      await this.storage.clear();
+      await this.serialized(() => this.storage.clear());
     } catch {
       // Nada a fazer: a sessão já saiu da memória e o próximo save sobrescreve.
     }
@@ -153,7 +174,7 @@ export class SessionManager {
 
     const result = await this.tokens.refresh(refreshToken).catch(() => null);
     // Saiu (ou entrou com outra conta) enquanto renovava: descarta o resultado.
-    if (this.sessions.current() !== session)
+    if (this.sessions.current()?.tokens.refreshToken !== refreshToken)
       return this.sessions.current()?.tokens.accessToken ?? null;
 
     if (result === null || (!result.ok && result.error.code === 'auth.offline')) return null;
@@ -162,23 +183,36 @@ export class SessionManager {
       return null;
     }
 
-    const renewed: Session = {
-      ...session,
-      tokens: {
-        ...result.value,
-        // Sem rotação, o provedor pode não devolver um refresh novo: o atual continua valendo.
-        ...(result.value.refreshToken ? {} : { refreshToken }),
-      },
+    const tokens: AuthTokens = {
+      ...result.value,
+      // Sem rotação, o provedor pode não devolver um refresh novo: o atual continua valendo.
+      ...(result.value.refreshToken ? {} : { refreshToken }),
     };
-    await this.persist(renewed);
-    this.sessions.save(renewed);
-    return renewed.tokens.accessToken;
+    return this.serialized(async () => {
+      // Parte do estado mais recente: o perfil pode ter mudado enquanto a renovação estava na rede.
+      const base = this.sessions.current();
+      if (!base || base.tokens.refreshToken !== refreshToken)
+        return base?.tokens.accessToken ?? null;
+      const renewed: Session = { ...base, tokens };
+      await this.persist(renewed);
+      // Saiu enquanto gravava: a limpeza do armazenamento está na fila, logo depois desta gravação.
+      if (this.sessions.current() !== base)
+        return this.sessions.current()?.tokens.accessToken ?? null;
+      this.sessions.save(renewed);
+      return renewed.tokens.accessToken;
+    });
   }
 
   /** O provedor recusou a renovação: volta para a tela de entrada com aviso. */
   private expire(): void {
     this.sessions.clear('expired');
-    this.storage.clear().catch(() => {});
+    this.serialized(() => this.storage.clear()).catch(() => {});
+  }
+
+  private serialized<T>(task: () => Promise<T>): Promise<T> {
+    const run = this.writes.then(task, task);
+    this.writes = run.catch(() => undefined);
+    return run;
   }
 
   private async persist(session: Session): Promise<void> {

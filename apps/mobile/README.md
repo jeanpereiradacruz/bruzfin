@@ -71,8 +71,16 @@ docker compose -f infra/compose/docker-compose.yml up -d                     # K
 adb reverse tcp:8080 tcp:8080 && adb reverse tcp:8180 tcp:8180               # localhost do aparelho → máquina
 ```
 
-Usuário de teste: `usuario@bruzfin.local` / `Teste1234`. Errar a senha 5 vezes bloqueia a conta por
+Usuários de teste: `usuario@bruzfin.local` e `convidado@bruzfin.local`, senha `Teste1234`. Errar a senha 5 vezes bloqueia a conta por
 alguns minutos (proteção contra força bruta do realm).
+
+## Lar
+
+Configurações → **Lar**: nome do lar (editável), membros e papel de cada um, **código de convite**
+(48 horas, uso único, compartilhado pelo menu do Android) e **entrar em outro lar** com um código
+(só aparece enquanto o usuário está sozinho no lar dele). Telas falam com o `HouseholdService` do
+core; a API é chamada pelo `ApiHouseholdGateway`. Ao entrar ou renomear, o lar guardado na sessão
+(Keystore) é atualizado.
 
 ## E2E (Maestro)
 

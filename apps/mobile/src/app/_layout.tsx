@@ -65,6 +65,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="nova-compra" options={{ presentation: 'modal' }} />
         <Stack.Screen name="configuracoes" />
+        <Stack.Screen name="lar" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="entrar" />

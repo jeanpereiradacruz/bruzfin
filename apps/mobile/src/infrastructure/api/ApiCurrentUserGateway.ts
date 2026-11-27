@@ -21,7 +21,9 @@ export class ApiCurrentUserGateway implements CurrentUserGateway {
         id,
         email,
         name: name ?? null,
-        household: household ? { id: household.id, name: household.name } : null,
+        household: household
+          ? { id: household.id, name: household.name, role: household.role }
+          : null,
       });
     } catch {
       return unavailable();

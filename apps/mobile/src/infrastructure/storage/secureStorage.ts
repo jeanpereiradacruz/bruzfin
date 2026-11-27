@@ -35,7 +35,11 @@ const sessionSchema = z.object({
     id: z.string(),
     email: z.string(),
     name: z.string().nullable(),
-    household: z.object({ id: z.string(), name: z.string() }).nullable(),
+    // Lar ilegível (ex.: salvo antes do papel existir) vira `null`: a tela do lar busca de novo na API.
+    household: z
+      .object({ id: z.string(), name: z.string(), role: z.enum(['OWNER', 'MEMBER']) })
+      .nullable()
+      .catch(null),
   }),
 });
 

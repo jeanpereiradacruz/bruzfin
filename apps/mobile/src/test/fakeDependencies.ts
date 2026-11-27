@@ -3,6 +3,9 @@ import {
   type AuthorizationMode,
   domainError,
   err,
+  type Household,
+  type HouseholdError,
+  type HouseholdInvite,
   InMemorySessionStore,
   ok,
   type Result,
@@ -18,8 +21,54 @@ export const testSession: Session = {
     id: '019a0000-0000-7000-8000-000000000001',
     email: 'usuario@bruzfin.local',
     name: 'Usuário de Teste',
-    household: null,
+    household: {
+      id: '019a0000-0000-7000-8000-0000000000a1',
+      name: 'Lar de Usuário',
+      role: 'OWNER',
+    },
   },
+};
+
+export const testHousehold: Household = {
+  id: '019a0000-0000-7000-8000-0000000000a1',
+  name: 'Lar de Usuário',
+  role: 'OWNER',
+  members: [
+    {
+      id: testSession.user.id,
+      email: 'usuario@bruzfin.local',
+      name: 'Usuário de Teste',
+      role: 'OWNER',
+      joinedAt: '2026-11-27T12:00:00Z',
+    },
+  ],
+};
+
+export const otherHousehold: Household = {
+  id: '019a0000-0000-7000-8000-0000000000b2',
+  name: 'Casa da família',
+  role: 'MEMBER',
+  members: [
+    {
+      id: '019a0000-0000-7000-8000-000000000002',
+      email: 'dona@bruzfin.local',
+      name: 'Dona do Lar',
+      role: 'OWNER',
+      joinedAt: '2026-11-20T12:00:00Z',
+    },
+    {
+      id: testSession.user.id,
+      email: 'usuario@bruzfin.local',
+      name: 'Usuário de Teste',
+      role: 'MEMBER',
+      joinedAt: '2026-11-27T13:00:00Z',
+    },
+  ],
+};
+
+export const testInvite: HouseholdInvite = {
+  code: 'ABCD-1230',
+  expiresAt: Date.parse('2026-11-29T17:30:00Z'),
 };
 
 type SignInOutcome = 'success' | 'cancelled' | 'failed';
@@ -86,12 +135,39 @@ export const createFakeDependencies = (
     await appLock.initialize();
   });
 
+  const householdError = (code: HouseholdError['code'], message: string) =>
+    err(domainError(code, message));
+  const household = {
+    load: jest.fn(async (): Promise<Result<Household, HouseholdError>> => ok(testHousehold)),
+    rename: jest.fn(
+      async (name: string): Promise<Result<Household, HouseholdError>> =>
+        ok({ ...testHousehold, name: name.trim() }),
+    ),
+    createInvite: jest.fn(
+      async (): Promise<Result<HouseholdInvite, HouseholdError>> => ok(testInvite),
+    ),
+    acceptInvite: jest.fn(
+      async (_code: string): Promise<Result<Household, HouseholdError>> => ok(otherHousehold),
+    ),
+  };
+
   const dependencies: AppDependencies = {
     sessionStore,
     signIn: { execute },
     signOut,
     appLock,
+    household,
     bootstrap,
   };
-  return { dependencies, sessionStore, execute, signOut, appLock, authenticate, bootstrap };
+  return {
+    dependencies,
+    sessionStore,
+    execute,
+    signOut,
+    appLock,
+    authenticate,
+    bootstrap,
+    household,
+    householdError,
+  };
 };

@@ -10,7 +10,7 @@ import { useSession } from '../hooks/useSession';
 import { useSignOut } from '../hooks/useSignOut';
 
 /**
- * Configurações (design App-Perfil). Por enquanto: bloqueio com biometria/PIN e "Sair";
+ * Configurações (design App-Perfil). Por enquanto: lar, bloqueio com biometria/PIN e "Sair";
  * os demais itens do design (alterar email/senha, Google, tema, dados) chegam nos próximos tickets.
  */
 export function SettingsScreen() {
@@ -44,6 +44,7 @@ export function SettingsScreen() {
   };
 
   const email = session?.user.email ?? '';
+  const householdName = session?.user.household?.name ?? 'Seu lar';
 
   return (
     <View style={styles.container}>
@@ -70,6 +71,30 @@ export function SettingsScreen() {
               {email}
             </Text>
             <Text style={styles.muted}>Entrou com email e senha</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>
+            Lar
+          </Text>
+          <View style={styles.card}>
+            <Pressable
+              testID="settings-household"
+              accessibilityRole="button"
+              accessibilityLabel={`Lar: ${householdName}`}
+              accessibilityHint="Membros, código de convite e entrar em outro lar"
+              onPress={() => router.push('/lar')}
+              style={({ pressed }) => [styles.row, pressed && styles.dimmed]}
+            >
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel} numberOfLines={1}>
+                  {householdName}
+                </Text>
+                <Text style={styles.muted}>Membros e convites</Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -216,6 +241,12 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontSize: 15,
     lineHeight: 22,
     color: theme.colors.ink,
+  },
+  chevron: {
+    fontFamily: theme.font('sans', 400),
+    fontSize: 20,
+    lineHeight: 22,
+    color: theme.colors.inkMuted,
   },
   signOut: {
     fontFamily: theme.font('sans', 600),

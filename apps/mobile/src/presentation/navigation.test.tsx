@@ -105,6 +105,9 @@ describe('bloqueio com biometria ou PIN', () => {
     await renderApp();
     expect(await screen.findByText('BruzFin bloqueado')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Desbloquear' })).toBeOnTheScreen();
+    // O conteúdo por baixo fica fora da árvore de acessibilidade (TalkBack não lê).
+    expect(screen.queryByText('Olá, Usuário')).toBeNull();
+    expect(screen.getByText('Olá, Usuário', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('"Sair da conta" na tela de bloqueio volta para a entrada', async () => {

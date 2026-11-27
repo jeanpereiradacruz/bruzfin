@@ -4,6 +4,9 @@
   "enabled": true,
   "sslRequired": "external",
 
+  "loginTheme": "bruzfin",
+  "emailTheme": "bruzfin",
+
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,
   "loginWithEmailAllowed": true,

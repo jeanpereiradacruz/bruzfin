@@ -35,6 +35,7 @@ Depois, a API: `cd services/api && ./mvnw spring-boot:run -Dspring-boot.run.prof
 - **Só no local**: `compose/keycloak/dev/bruzfin-users-0.json` cria os usuários de teste `usuario@bruzfin.local` e `convidado@bruzfin.local` (senha `Teste1234`; o segundo serve para testar convites). A nuvem não monta esse arquivo.
 - Regras principais: cliente público `bruzfin-mobile` com Authorization Code + **PKCE S256** obrigatório (password grant e implicit desligados), audience `bruzfin-api`, access token de 5 min, refresh com rotação (reusar um refresh revoga a sessão), senha com 8+ caracteres, letras e números, bloqueio temporário após 5 falhas, idioma pt-BR e emails pelo Mailpit.
 - **Emulador Android**: rode `adb reverse tcp:8180 tcp:8180`. Assim o app também usa `http://localhost:8180`, e o issuer do token fica igual para o app e a API.
+- **Tema BruzFin** (`infra/keycloak-theme`, KAN-23): gere o `.jar` com `pnpm --filter @bruzfin/keycloak-theme build:jar` e reinicie o Keycloak. O realm usa `loginTheme` e `emailTheme` = `bruzfin`; sem o `.jar`, vale o tema padrão.
 - **Mudou o realm?** O import não sobrescreve um realm existente. No local, recrie só o banco do Keycloak (apaga usuários de teste e sessões, não toca no banco da API):
 
 ```bash

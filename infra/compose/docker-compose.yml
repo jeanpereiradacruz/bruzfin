@@ -119,7 +119,10 @@ services:
       BRUZFIN_SMTP_FROM: ${BRUZFIN_SMTP_FROM:-nao-responda@bruzfin.local}
     volumes:
       - ./keycloak/bruzfin-realm.json:/opt/keycloak/data/import/bruzfin-realm.json:ro
-      # Só no ambiente local: usuário de teste (usuario@bruzfin.local / Teste1234).
+      # Tema BruzFin (KAN-23): `pnpm --filter @bruzfin/keycloak-theme build:jar` gera o .jar aqui.
+      # Sem o .jar, o Keycloak usa o tema padrão.
+      - ../keycloak-theme/providers:/opt/keycloak/providers:ro
+      # Só no ambiente local: usuários de teste (usuario@ e convidado@bruzfin.local / Teste1234).
       - ./keycloak/dev/bruzfin-users-0.json:/opt/keycloak/data/import/bruzfin-users-0.json:ro
     ports:
       # 8080 fica para a API e 8081 para o Metro; o Keycloak usa 8180 na máquina.

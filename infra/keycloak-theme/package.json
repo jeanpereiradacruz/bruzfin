@@ -1,0 +1,38 @@
+{
+  "name": "@bruzfin/keycloak-theme",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tema BruzFin do Keycloak (login, cadastro, recuperação e emails) com Keycloakify",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:jar": "vite build && keycloakify build && node scripts/copy-jar.mjs",
+    "update-kc-gen": "keycloakify update-kc-gen",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bruzfin/design-tokens": "workspace:*",
+    "@fontsource/inter": "5.3.0",
+    "@fontsource/manrope": "5.3.0",
+    "keycloakify": "11.16.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@bruzfin/config": "workspace:*",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.13",
+    "@types/react": "~19.3.0",
+    "@types/react-dom": "~19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "31.0.1",
+    "typescript": "~6.0.3",
+    "vite": "8.4.0",
+    "vitest": "5.1.0"
+  }
+}

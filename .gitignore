@@ -51,3 +51,8 @@ pnpm-debug.log*
 
 # Expo (gerados)
 expo-env.d.ts
+
+# Tema do Keycloak (KAN-23): saída do Keycloakify e o .jar montado no compose
+infra/keycloak-theme/dist
+infra/keycloak-theme/dist_keycloak
+infra/keycloak-theme/providers/*.jar

@@ -1,6 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "infra/keycloak-theme"
 
 # Scripts de instalação (postinstall) ficam bloqueados por padrão no pnpm 12.
 # Só liberamos o que for realmente necessário; false = usar o binário pré-compilado.

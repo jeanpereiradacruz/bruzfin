@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { BrandLogo } from '../components/BrandLogo';
+import { useSessionEndReason } from '../hooks/useSession';
 import { useSignIn } from '../hooks/useSignIn';
 
 /**
@@ -10,6 +11,8 @@ import { useSignIn } from '../hooks/useSignIn';
 export function WelcomeScreen() {
   const { pending, error, start } = useSignIn();
   const { theme } = useUnistyles();
+  const expired = useSessionEndReason() === 'expired';
+  const notice = error ?? (expired ? 'Sua sessão expirou. Entre novamente.' : null);
 
   return (
     <View style={styles.container}>
@@ -26,9 +29,9 @@ export function WelcomeScreen() {
           Entrar na sua conta
         </Text>
 
-        {error ? (
+        {notice ? (
           <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>
-            {error}
+            {notice}
           </Text>
         ) : null}
 

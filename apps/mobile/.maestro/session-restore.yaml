@@ -1,0 +1,13 @@
+# E2E: ao reabrir o app, o usuário continua logado (tokens no Keystore via SecureStore).
+# Mesmos pré-requisitos de login.yaml.
+appId: com.bruzfin.app
+name: Continuar logado ao reabrir
+tags: [auth]
+---
+- runFlow: login.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Olá, Usuário"
+    timeout: 60000
+- assertNotVisible: "Entrar na sua conta"

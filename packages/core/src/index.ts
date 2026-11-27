@@ -1,15 +1,32 @@
+export {
+  AppLock,
+  type AppLockSettings,
+  type AppLockState,
+  type DeviceAuthenticator,
+  type UnlockOutcome,
+} from './application/auth/app-lock';
 export { InMemorySessionStore } from './application/auth/in-memory-session-store';
 export type {
   AuthGateway,
   AuthorizationError,
   AuthorizationErrorCode,
   AuthorizationMode,
+  Clock,
   CurrentUserError,
   CurrentUserErrorCode,
   CurrentUserGateway,
+  PendingRevocationQueue,
+  SessionEndReason,
   SessionStore,
+  TokenGateway,
+  TokenRefreshError,
+  TokenRefreshErrorCode,
+  TokenStorage,
 } from './application/auth/ports';
+export { systemClock } from './application/auth/ports';
+export { SessionManager, type SessionManagerOptions } from './application/auth/session-manager';
 export {
+  type SessionStarter,
   SignIn,
   type SignInError,
   type SignInErrorCode,

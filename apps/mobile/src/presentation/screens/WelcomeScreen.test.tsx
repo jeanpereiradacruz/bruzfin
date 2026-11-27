@@ -66,4 +66,26 @@ describe('WelcomeScreen', () => {
     });
     expect(screen.getByTestId('welcome-sign-up')).toHaveStyle({ height: 52 });
   });
+
+  it('depois de uma sessão expirada, avisa para entrar de novo', async () => {
+    const fake = createFakeDependencies('success', { signedIn: true });
+    fake.sessionStore.clear('expired');
+    await render(
+      <AppProviders dependencies={fake.dependencies}>
+        <WelcomeScreen />
+      </AppProviders>,
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre novamente.');
+  });
+
+  it('depois de sair pelo botão, não mostra aviso', async () => {
+    const fake = createFakeDependencies('success', { signedIn: true });
+    fake.sessionStore.clear('signed-out');
+    await render(
+      <AppProviders dependencies={fake.dependencies}>
+        <WelcomeScreen />
+      </AppProviders>,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });

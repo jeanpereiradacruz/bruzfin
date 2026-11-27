@@ -45,10 +45,23 @@ A pasta `android/` é gerada pelo `expo prebuild` e não é versionada; toda con
   impede o router de tratar esse link como rota.
 - Depois do login o app chama `GET /api/v1/me`; só com o perfil confirmado a sessão é criada e a guarda
   de rotas (`Stack.Protected` em `src/app/_layout.tsx`) leva ao Início.
-- Tokens ficam **só em memória** por enquanto (fechou o app, precisa entrar de novo). Keystore,
-  renovação e sair entram no KAN-29.
 - Configuração por `EXPO_PUBLIC_*` (ver `.env.example`). Em desenvolvimento, sem `.env`, vale o ambiente
   local; em release todas são obrigatórias e HTTPS.
+
+## Sessão segura
+
+- Tokens e perfil ficam cifrados no **Android Keystore** (`expo-secure-store`,
+  `src/infrastructure/storage/secureStorage.ts`); nunca em AsyncStorage nem em logs. Ao reabrir o app,
+  a splash espera a sessão ser restaurada e, se o access token venceu, ele é renovado antes.
+- O cliente HTTP pede o token ao `SessionManager` (`@bruzfin/core`) em cada requisição: falta menos de
+  1 minuto para vencer → renova antes; resposta 401 → renova e repete **uma** vez. Várias requisições
+  ao mesmo tempo geram uma única renovação (o Keycloak rotaciona o refresh e recusa o reuso).
+- Refresh recusado (revogado ou sessão expirada) → volta à tela de entrada com "Sua sessão expirou".
+- **Sair** (Configurações, pelo avatar no Início) apaga os tokens do aparelho e encerra a sessão no
+  Keycloak (logout com o refresh token). Sem internet, apaga do mesmo jeito e revoga depois.
+- **Bloqueio opcional** com biometria ou PIN do aparelho (`expo-local-authentication`), ligado nas
+  Configurações: pede ao abrir o app e ao voltar depois de 5 minutos em segundo plano. A tela de
+  bloqueio fica sobre o conteúdo; o `FLAG_SECURE` já esconde a prévia nos apps recentes.
 
 Rodando local no emulador ou celular (USB):
 
@@ -64,7 +77,7 @@ alguns minutos (proteção contra força bruta do realm).
 ## E2E (Maestro)
 
 ```bash
-maestro test .maestro      # login e cancelamento; precisa do ambiente local acima e do dev build
+maestro test .maestro      # login, cancelamento, continuar logado e sair; precisa do ambiente local e do dev build
 ```
 
 ## Segurança

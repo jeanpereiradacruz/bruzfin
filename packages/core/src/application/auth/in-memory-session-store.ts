@@ -1,12 +1,10 @@
 import type { Session } from '../../domain/auth/session';
-import type { SessionStore } from './ports';
+import type { SessionEndReason, SessionStore } from './ports';
 
-/**
- * Sessão só em memória: some quando o app é fechado.
- * Usada no app até o KAN-29 (Keystore) e nos testes.
- */
+/** Sessão observável em memória. A persistência fica no `TokenStorage` (ver `SessionManager`). */
 export class InMemorySessionStore implements SessionStore {
   private session: Session | null = null;
+  private reason: SessionEndReason | null = null;
   private readonly listeners = new Set<() => void>();
 
   current(): Session | null {
@@ -15,13 +13,19 @@ export class InMemorySessionStore implements SessionStore {
 
   save(session: Session): void {
     this.session = session;
+    this.reason = null;
     this.notify();
   }
 
-  clear(): void {
+  clear(reason: SessionEndReason = 'signed-out'): void {
     if (this.session === null) return;
     this.session = null;
+    this.reason = reason;
     this.notify();
+  }
+
+  endReason(): SessionEndReason | null {
+    return this.reason;
   }
 
   subscribe(listener: () => void): () => void {

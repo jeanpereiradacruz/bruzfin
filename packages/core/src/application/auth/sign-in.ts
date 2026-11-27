@@ -8,8 +8,12 @@ import type {
   AuthorizationMode,
   CurrentUserErrorCode,
   CurrentUserGateway,
-  SessionStore,
 } from './ports';
+
+/** Quem passa a cuidar da sessão depois do login (o `SessionManager`: memória + Keystore). */
+export interface SessionStarter {
+  start(session: Session): Promise<void>;
+}
 
 export type SignInInput = { readonly mode: AuthorizationMode };
 
@@ -33,7 +37,7 @@ export class SignIn implements UseCase<SignInInput, Result<Session, SignInError>
   constructor(
     private readonly auth: AuthGateway,
     private readonly users: CurrentUserGateway,
-    private readonly sessions: SessionStore,
+    private readonly sessions: SessionStarter,
   ) {}
 
   async execute({ mode }: SignInInput): Promise<Result<Session, SignInError>> {
@@ -45,7 +49,7 @@ export class SignIn implements UseCase<SignInInput, Result<Session, SignInError>
     if (!user.ok) return err(toSignInError(user.error.code));
 
     const session: Session = { tokens, user: user.value };
-    this.sessions.save(session);
+    await this.sessions.start(session);
     return ok(session);
   }
 }

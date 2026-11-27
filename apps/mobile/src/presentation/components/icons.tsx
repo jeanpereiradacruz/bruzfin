@@ -1,7 +1,7 @@
 import Svg, { Path, Rect } from 'react-native-svg';
 
 /** Ícones de traço do design (viewBox 24×24). Decorativos: o rótulo acessível fica no botão. */
-export type IconName = 'home' | 'accounts' | 'charts' | 'registry' | 'plus' | 'close';
+export type IconName = 'home' | 'accounts' | 'charts' | 'registry' | 'plus' | 'close' | 'back';
 
 type IconProps = {
   readonly name: IconName;
@@ -37,6 +37,7 @@ export function Icon({ name, color, size = 22, strokeWidth = 1.5 }: IconProps) {
           <Path d="M3 10h18M16 15h2" {...stroke} />
         </>
       )}
+      {name === 'back' && <Path d="m15 6-6 6 6 6" {...stroke} />}
       {name === 'charts' && <Path d="M5 20V11M12 20V5M19 20v-6" {...stroke} />}
       {name === 'registry' && (
         <>

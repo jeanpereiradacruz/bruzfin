@@ -1,0 +1,27 @@
+# E2E: "Sair" apaga a sessão do aparelho e encerra a sessão no Keycloak (o próximo "Entrar" pede a senha).
+# Mesmos pré-requisitos de login.yaml.
+appId: com.bruzfin.app
+name: Sair da conta
+tags: [auth]
+---
+- runFlow: login.yaml
+- tapOn:
+    id: "home-settings"
+- assertVisible: "usuario@bruzfin.local"
+- tapOn:
+    id: "settings-sign-out"
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 20000
+# Reabrir o app não restaura a sessão.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Entrar na sua conta"
+    timeout: 60000
+# A sessão SSO acabou: o Keycloak mostra o formulário de novo.
+- tapOn:
+    id: "welcome-sign-in"
+- extendedWaitUntil:
+    visible: "Senha"
+    timeout: 20000

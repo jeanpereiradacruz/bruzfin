@@ -16,7 +16,7 @@ if (response.status === 200)
 else response.data.title; // 401/403/429: Problem (RFC 9457)
 ```
 
-- `src/http.ts` é o transporte (mutator do orval): URL base, cabeçalho `Authorization: Bearer` e leitura da resposta. Não depende de React nem Expo. A renovação automática do token entra aqui no KAN-29.
+- `src/http.ts` é o transporte (mutator do orval): URL base, cabeçalho `Authorization: Bearer` e leitura da resposta. Não depende de React nem Expo. Em 401, chama `onUnauthorized` (o app renova o token em single-flight) e repete a requisição **uma** vez.
 - `openapi.json` é o contrato publicado pela API (`services/api`).
 
 ## Quando a API muda

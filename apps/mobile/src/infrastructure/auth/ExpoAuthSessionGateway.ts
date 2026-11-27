@@ -3,10 +3,13 @@ import {
   type AuthorizationError,
   type AuthorizationMode,
   type AuthTokens,
+  type DomainError,
   domainError,
   err,
   ok,
   type Result,
+  type TokenGateway,
+  type TokenRefreshError,
 } from '@bruzfin/core';
 import {
   AuthRequest,
@@ -16,7 +19,10 @@ import {
   type DiscoveryDocument,
   exchangeCodeAsync,
   fetchDiscoveryAsync,
+  ResponseError,
   ResponseType,
+  refreshAsync,
+  type TokenResponse,
 } from 'expo-auth-session';
 
 export type ExpoAuthSessionConfig = {
@@ -33,6 +39,9 @@ export type ExpoAuthSessionDriver = {
     discovery: DiscoveryDocument,
   ): Promise<{ result: AuthSessionResult; codeVerifier: string | undefined }>;
   exchangeCode: typeof exchangeCodeAsync;
+  refresh: typeof refreshAsync;
+  /** POST `application/x-www-form-urlencoded`; devolve só o status HTTP. */
+  postForm(url: string, form: Record<string, string>): Promise<number>;
 };
 
 const defaultDriver: ExpoAuthSessionDriver = {
@@ -45,20 +54,49 @@ const defaultDriver: ExpoAuthSessionDriver = {
     return { result, codeVerifier: request.codeVerifier };
   },
   exchangeCode: exchangeCodeAsync,
+  refresh: refreshAsync,
+  async postForm(url, form) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(form).toString(),
+    });
+    return response.status;
+  },
 };
 
 const SCOPES = ['openid', 'profile', 'email'];
+
+/** Respostas OAuth que significam "não adianta tentar de novo: é preciso entrar outra vez". */
+const DEFINITIVE_REFRESH_ERRORS = new Set([
+  'invalid_grant',
+  'invalid_client',
+  'unauthorized_client',
+]);
 
 /**
  * Adapter do `AuthGateway` com OAuth2 Authorization Code + PKCE pelo navegador seguro do sistema
  * (Custom Tabs). A senha é digitada só na página do Keycloak; o app recebe apenas o código e troca por
  * tokens. Detalhes técnicos de erro não saem daqui (nem para logs): podem conter dados da sessão.
  */
-export class ExpoAuthSessionGateway implements AuthGateway {
+export class ExpoAuthSessionGateway implements AuthGateway, TokenGateway {
+  private discovery: Promise<DiscoveryDocument> | null = null;
+
   constructor(
     private readonly config: ExpoAuthSessionConfig,
     private readonly driver: ExpoAuthSessionDriver = defaultDriver,
   ) {}
+
+  /** Descoberta OIDC uma vez por execução; se falhar (sem rede), tenta de novo na próxima chamada. */
+  private getDiscovery(): Promise<DiscoveryDocument> {
+    if (!this.discovery) {
+      this.discovery = this.driver.fetchDiscovery(this.config.issuer).catch((error: unknown) => {
+        this.discovery = null;
+        throw error;
+      });
+    }
+    return this.discovery;
+  }
 
   async authorize({
     mode,
@@ -66,7 +104,7 @@ export class ExpoAuthSessionGateway implements AuthGateway {
     readonly mode: AuthorizationMode;
   }): Promise<Result<AuthTokens, AuthorizationError>> {
     try {
-      const discovery = await this.driver.fetchDiscovery(this.config.issuer);
+      const discovery = await this.getDiscovery();
       const { result, codeVerifier } = await this.driver.prompt(
         {
           clientId: this.config.clientId,
@@ -96,18 +134,62 @@ export class ExpoAuthSessionGateway implements AuthGateway {
         },
         discovery,
       );
-      return ok({
-        accessToken: token.accessToken,
-        ...(token.refreshToken ? { refreshToken: token.refreshToken } : {}),
-        ...(token.idToken ? { idToken: token.idToken } : {}),
-        expiresAt: (token.issuedAt + (token.expiresIn ?? 0)) * 1000,
-      });
+      return ok(toAuthTokens(token));
     } catch {
       // Sem internet, Keycloak fora do ar ou troca do código recusada.
       return failed();
     }
   }
+
+  /** Renova com o refresh token (o Keycloak devolve um refresh novo e invalida o anterior). */
+  async refresh(refreshToken: string): Promise<Result<AuthTokens, TokenRefreshError>> {
+    try {
+      const discovery = await this.getDiscovery();
+      const token = await this.driver.refresh(
+        { clientId: this.config.clientId, refreshToken, scopes: SCOPES },
+        discovery,
+      );
+      return ok(toAuthTokens(token));
+    } catch (error) {
+      // invalid_grant = refresh revogado, já usado ou sessão expirada no Keycloak.
+      // Qualquer outra falha (rede, provedor fora do ar) é passageira.
+      return error instanceof ResponseError && DEFINITIVE_REFRESH_ERRORS.has(error.code)
+        ? err(domainError('auth.session-expired', 'Sua sessão expirou. Entre novamente.'))
+        : offline();
+    }
+  }
+
+  /**
+   * Encerra a sessão no Keycloak (logout pelo back-channel com o refresh token): invalida o refresh
+   * e a sessão SSO, então o próximo "Entrar" pede a senha de novo.
+   */
+  async endSession(refreshToken: string): Promise<Result<void, DomainError<'auth.offline'>>> {
+    try {
+      const discovery = await this.getDiscovery();
+      if (!discovery.endSessionEndpoint) return offline();
+      const status = await this.driver.postForm(discovery.endSessionEndpoint, {
+        client_id: this.config.clientId,
+        refresh_token: refreshToken,
+      });
+      // 2xx: encerrada. 400/401: token ou sessão já não existem — nada mais a revogar.
+      if ((status >= 200 && status < 300) || status === 400 || status === 401) return ok(undefined);
+      return offline();
+    } catch {
+      return offline();
+    }
+  }
 }
+
+const toAuthTokens = (token: TokenResponse): AuthTokens => ({
+  accessToken: token.accessToken,
+  ...(token.refreshToken ? { refreshToken: token.refreshToken } : {}),
+  ...(token.idToken ? { idToken: token.idToken } : {}),
+  // `issuedAt` é o relógio do aparelho na chegada da resposta e `expiresIn` é relativo:
+  // a diferença de relógio com o servidor não afeta a expiração calculada.
+  expiresAt: (token.issuedAt + (token.expiresIn ?? 0)) * 1000,
+});
+
+const offline = () => err(domainError('auth.offline', 'Sem conexão com o servidor de login.'));
 
 const cancelled = () => err(domainError('auth.cancelled', 'Login cancelado.'));
 const failed = () => err(domainError('auth.failed', 'Não foi possível entrar.'));

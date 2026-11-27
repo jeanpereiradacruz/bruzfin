@@ -17,9 +17,9 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.7",
     "@bruzfin/config": "workspace:*",
-    "orval": "8.43.0",
+    "orval": "8.47.0",
     "typescript": "~6.0.3",
     "vitest": "5.1.0"
   }

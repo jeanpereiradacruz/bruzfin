@@ -58,12 +58,21 @@ class BruzfinApiApplicationIT {
     }
 
     @Test
-    @DisplayName("Flyway cria as tabelas de eventos do Modulith e de usuários")
+    @DisplayName("Flyway cria as tabelas de eventos do Modulith, de usuários e do lar (com RLS forçada)")
     void flywayCreatesTables() {
         Integer tables = jdbc.queryForObject("""
                 select count(*) from information_schema.tables
-                where table_name in ('event_publication', 'app_user')""", Integer.class);
-        assertThat(tables).isEqualTo(2);
+                where table_name in ('event_publication', 'app_user', 'household', 'household_member',
+                                     'household_invite')""", Integer.class);
+        assertThat(tables).isEqualTo(5);
+        Integer forced = jdbc.queryForObject("""
+                select count(*) from pg_class
+                where relname in ('household', 'household_member', 'household_invite')
+                  and relrowsecurity and relforcerowsecurity""", Integer.class);
+        assertThat(forced).isEqualTo(3);
+        Boolean superuser = jdbc.queryForObject("select rolsuper from pg_roles where rolname = current_user",
+                Boolean.class);
+        assertThat(superuser).as("a API não conecta como superusuário (ignoraria a RLS)").isFalse();
     }
 
     @Test
@@ -84,7 +93,7 @@ class BruzfinApiApplicationIT {
     }
 
     @Test
-    @DisplayName("GET /api/v1/me cria o usuário no primeiro acesso e só uma vez")
+    @DisplayName("GET /api/v1/me cria o usuário e o lar automático no primeiro acesso, só uma vez")
     void meProvisionsUserOnce() {
         for (int i = 0; i < 2; i++) {
             client.get().uri("/api/v1/me").header("Authorization", "Bearer " + accessToken).exchange()
@@ -93,12 +102,16 @@ class BruzfinApiApplicationIT {
                     .jsonPath("$.email").isEqualTo(KeycloakPkce.TEST_USER)
                     .jsonPath("$.name").isEqualTo("Usuário de Teste")
                     .jsonPath("$.id").isNotEmpty()
-                    .jsonPath("$.household").doesNotExist();
+                    .jsonPath("$.household.name").isEqualTo("Lar de Usuário")
+                    .jsonPath("$.household.role").isEqualTo("OWNER");
         }
         String subject = KeycloakPkce.claims(accessToken).get("sub").asString();
         Integer users = jdbc.queryForObject(
                 "select count(*) from app_user where keycloak_sub = ?", Integer.class, subject);
         assertThat(users).isEqualTo(1);
+        Integer pending = jdbc.queryForObject(
+                "select count(*) from event_publication where completion_date is null", Integer.class);
+        assertThat(pending).as("evento de usuário criado já processado pelo módulo do lar").isZero();
     }
 
     @Test

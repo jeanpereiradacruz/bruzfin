@@ -2,15 +2,21 @@ package com.bruzfin.api.identity.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.bruzfin.api.identity.application.port.out.UserEvents;
 import com.bruzfin.api.identity.application.port.out.UserRepository;
 import com.bruzfin.api.identity.domain.IdentityClaims;
 import com.bruzfin.api.identity.domain.User;
+import com.bruzfin.api.identity.domain.UserId;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.transaction.support.TransactionOperations;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,8 +26,10 @@ class GetCurrentUserServiceTest {
     private static final Instant NOW = Instant.parse("2026-11-05T12:00:00Z");
 
     private final InMemoryUsers users = new InMemoryUsers();
-    private final GetCurrentUserService service =
-            new GetCurrentUserService(users, Clock.fixed(NOW, ZoneOffset.UTC));
+    private final List<User> provisioned = new ArrayList<>();
+    private final UserEvents events = provisioned::add;
+    private final GetCurrentUserService service = new GetCurrentUserService(users, events,
+            TransactionOperations.withoutTransaction(), Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     @DisplayName("no primeiro acesso, cria o usuário")
@@ -31,6 +39,7 @@ class GetCurrentUserServiceTest {
         assertThat(users.bySubject).containsOnlyKeys("sub-1");
         assertThat(user.createdAt()).isEqualTo(NOW);
         assertThat(users.inserts).isEqualTo(1);
+        assertThat(provisioned).containsExactly(user);
     }
 
     @Test
@@ -44,6 +53,7 @@ class GetCurrentUserServiceTest {
         assertThat(second.id()).isEqualTo(first.id());
         assertThat(users.inserts).isEqualTo(1);
         assertThat(users.updates).isZero();
+        assertThat(provisioned).hasSize(1);
     }
 
     @Test
@@ -67,6 +77,16 @@ class GetCurrentUserServiceTest {
         User user = service.getCurrentUser(new IdentityClaims("sub-1", "a@bruzfin.local", null));
 
         assertThat(user.id()).isEqualTo(existing.id());
+        assertThat(provisioned).as("o evento é de quem gravou primeiro").isEmpty();
+    }
+
+    @Test
+    @DisplayName("nome para exibição cai para o começo do email quando não há nome")
+    void displayName() {
+        assertThat(User.provision(new IdentityClaims("s", "ana@bruzfin.local", null), NOW).displayName())
+                .isEqualTo("ana");
+        assertThat(User.provision(new IdentityClaims("s", "ana@bruzfin.local", "Ana Souza"), NOW).displayName())
+                .isEqualTo("Ana Souza");
     }
 
     /** Repositório em memória que imita o INSERT ... ON CONFLICT DO NOTHING. */
@@ -80,6 +100,11 @@ class GetCurrentUserServiceTest {
         @Override
         public Optional<User> findBySubject(String subject) {
             return Optional.ofNullable(bySubject.get(subject));
+        }
+
+        @Override
+        public List<User> findByIds(Collection<UserId> ids) {
+            return bySubject.values().stream().filter(u -> ids.contains(u.id())).toList();
         }
 
         @Override

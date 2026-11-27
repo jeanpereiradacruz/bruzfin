@@ -11,6 +11,9 @@
     "bearer" : [ ]
   } ],
   "tags" : [ {
+    "name" : "Lar",
+    "description" : "Lar do usuário, membros e convites"
+  }, {
     "name" : "Sobre",
     "description" : "Identificação da API"
   }, {
@@ -18,18 +21,38 @@
     "description" : "Usuário autenticado"
   } ],
   "paths" : {
-    "/api/v1/me" : {
-      "get" : {
-        "tags" : [ "Identidade" ],
-        "summary" : "Perfil do usuário autenticado (criado no primeiro acesso)",
-        "operationId" : "getMe",
+    "/api/v1/household/invites" : {
+      "post" : {
+        "tags" : [ "Lar" ],
+        "summary" : "Gera um código de convite (48 horas, uso único); o código anterior ainda não usado deixa de valer",
+        "operationId" : "createHouseholdInvite",
         "responses" : {
-          "200" : {
-            "description" : "OK",
+          "201" : {
+            "description" : "Código gerado; só aparece nesta resposta",
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Me"
+                  "$ref" : "#/components/schemas/HouseholdInvite"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Lar automático ainda em preparação",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
                 }
               }
             }
@@ -44,8 +67,292 @@
               }
             }
           },
+          "401" : {
+            "description" : "Token ausente, inválido ou expirado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/household/invites/accept" : {
+      "post" : {
+        "tags" : [ "Lar" ],
+        "summary" : "Entra no lar do código de convite",
+        "operationId" : "acceptHouseholdInvite",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AcceptHouseholdInviteRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Lar em que o usuário entrou",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Household"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Código ausente",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Código não encontrado (household.invite-not-found)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Convite já usado, usuário já é do lar ou lar atual com dados",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "410" : {
+            "description" : "Convite vencido (household.invite-expired)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "Não foi possível conferir as tentativas agora",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
           "403" : {
             "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Token ausente, inválido ou expirado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/household" : {
+      "get" : {
+        "tags" : [ "Lar" ],
+        "summary" : "Lar do usuário com os membros",
+        "operationId" : "getHousehold",
+        "responses" : {
+          "200" : {
+            "description" : "Lar do usuário",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Household"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Lar automático ainda em preparação (household.household-not-ready)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Token ausente, inválido ou expirado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "Lar" ],
+        "summary" : "Troca o nome do lar",
+        "operationId" : "renameHousehold",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RenameHouseholdRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Lar com o nome novo",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Household"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Nome vazio ou com mais de 60 caracteres",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "Lar automático ainda em preparação",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Token ausente, inválido ou expirado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me" : {
+      "get" : {
+        "tags" : [ "Identidade" ],
+        "summary" : "Perfil do usuário autenticado, com o lar e o papel dele",
+        "operationId" : "getMe",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -83,8 +390,8 @@
               }
             }
           },
-          "429" : {
-            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
+          "403" : {
+            "description" : "Email não confirmado ou acesso negado",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -93,8 +400,8 @@
               }
             }
           },
-          "403" : {
-            "description" : "Email não confirmado ou acesso negado",
+          "429" : {
+            "description" : "Muitas requisições; veja o cabeçalho Retry-After",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -119,6 +426,94 @@
   },
   "components" : {
     "schemas" : {
+      "HouseholdInvite" : {
+        "type" : "object",
+        "description" : "Código de convite recém-gerado; não é possível vê-lo de novo",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "example" : "ABCD-EFGH"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "code", "expiresAt" ]
+      },
+      "AcceptHouseholdInviteRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "example" : "ABCD-EFGH",
+            "maxLength" : 20,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "code" ]
+      },
+      "Household" : {
+        "type" : "object",
+        "description" : "Lar do usuário e os membros dele",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string",
+            "description" : "Papel do usuário autenticado no lar",
+            "enum" : [ "OWNER", "MEMBER" ]
+          },
+          "members" : {
+            "type" : "array",
+            "description" : "Membros por ordem de entrada",
+            "items" : {
+              "$ref" : "#/components/schemas/HouseholdMember"
+            }
+          }
+        },
+        "required" : [ "id", "members", "name", "role" ]
+      },
+      "HouseholdMember" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          },
+          "role" : {
+            "type" : "string",
+            "enum" : [ "OWNER", "MEMBER" ]
+          },
+          "joinedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "email", "id", "joinedAt", "role" ]
+      },
+      "RenameHouseholdRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 60,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "name" ]
+      },
       "Me" : {
         "type" : "object",
         "description" : "Perfil do usuário autenticado",
@@ -135,7 +530,7 @@
           },
           "household" : {
             "$ref" : "#/components/schemas/MeHousehold",
-            "description" : "Lar do usuário; ausente enquanto ele não tiver um"
+            "description" : "Lar do usuário; ausente enquanto o lar automático não estiver pronto"
           }
         },
         "required" : [ "email", "id" ]
@@ -149,9 +544,14 @@
           },
           "name" : {
             "type" : "string"
+          },
+          "role" : {
+            "type" : "string",
+            "description" : "Papel do usuário no lar: quem criou (OWNER) ou quem entrou por convite (MEMBER)",
+            "enum" : [ "OWNER", "MEMBER" ]
           }
         },
-        "required" : [ "id", "name" ]
+        "required" : [ "id", "name", "role" ]
       },
       "About" : {
         "type" : "object",
@@ -173,18 +573,22 @@
           "title" : {
             "type" : "string"
           },
+          "instance" : {
+            "type" : "string"
+          },
           "detail" : {
+            "type" : "string"
+          },
+          "type" : {
             "type" : "string"
           },
           "status" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "type" : {
-            "type" : "string"
-          },
-          "instance" : {
-            "type" : "string"
+          "code" : {
+            "type" : "string",
+            "description" : "Código estável do erro de negócio, quando houver (ex.: household.invite-expired)"
           }
         },
         "required" : [ "status", "title" ]

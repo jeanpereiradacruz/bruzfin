@@ -2,6 +2,9 @@ package com.bruzfin.api.identity.adapter.out.persistence;
 
 import com.bruzfin.api.identity.application.port.out.UserRepository;
 import com.bruzfin.api.identity.domain.User;
+import com.bruzfin.api.identity.domain.UserId;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.jmolecules.architecture.hexagonal.SecondaryAdapter;
 
@@ -17,6 +20,13 @@ final class UserPersistenceAdapter implements UserRepository {
     @Override
     public Optional<User> findBySubject(String subject) {
         return jpa.findBySubject(subject).map(UserEntity::toDomain);
+    }
+
+    @Override
+    public List<User> findByIds(Collection<UserId> ids) {
+        return jpa.findAllById(ids.stream().map(UserId::value).toList()).stream()
+                .map(UserEntity::toDomain)
+                .toList();
     }
 
     @Override
